@@ -1,0 +1,9 @@
+<UserControl x:Class="AniVault.Controls.RatingStars"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock x:Name="StarsBlock" Foreground="{DynamicResource Brush.Star}" FontSize="15" />
+        <TextBlock x:Name="NumberBlock" Foreground="{DynamicResource Brush.TextSecondary}"
+                   FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,10 @@
+<UserControl x:Class="AniVault.Controls.StatusBadge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <Border CornerRadius="4" Padding="7,2"
+            Background="{Binding Status, ElementName=Root, Converter={StaticResource WatchStatusToBrush}}">
+        <TextBlock Text="{Binding Status, ElementName=Root, Converter={StaticResource EnumLabel}}"
+                   Foreground="{DynamicResource Brush.OnAccent}" FontSize="11" FontWeight="SemiBold" />
+    </Border>
+</UserControl>

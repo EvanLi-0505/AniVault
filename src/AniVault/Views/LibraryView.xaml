@@ -1,0 +1,75 @@
+<UserControl x:Class="AniVault.Views.LibraryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:AniVault.Controls"
+             xmlns:vm="clr-namespace:AniVault.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:LibraryViewModel}"
+             Background="{DynamicResource Brush.Background}">
+
+    <Grid Margin="32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Heading}" />
+                <TextBlock Style="{StaticResource Text.Muted}" Margin="0,4,0,0">
+                    <Run Text="{Binding Items.Count, Mode=OneWay}" /><Run Text=" shown · " /><Run Text="{Binding Subtitle, Mode=OneWay}" />
+                </TextBlock>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="📅 Browse by season" Margin="0,0,8,0" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding BrowseSeasonsCommand}"
+                        Visibility="{Binding ShowSeasonBrowser, Converter={StaticResource BoolToVisibility}}" />
+                <Button Content="🌐 Search online" Margin="0,0,8,0" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding SearchOnlineCommand}"
+                        Visibility="{Binding OnlineSearchEnabled, Converter={StaticResource BoolToVisibility}}" />
+                <Button Content="{Binding AddButtonText}"
+                        Style="{StaticResource Button.Primary}" Command="{Binding AddMediaCommand}"
+                        Visibility="{Binding CanAdd, Converter={StaticResource BoolToVisibility}}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Filters -->
+        <controls:FilterPanel Grid.Row="1" Margin="0,16,0,16" DataContext="{Binding Filters}" />
+
+        <!-- Content -->
+        <Grid Grid.Row="2">
+            <controls:EmptyState Title="Nothing to show"
+                                 Message="{Binding EmptyStateText}"
+                                 ActionText="{Binding AddButtonText}"
+                                 ActionCommand="{Binding AddMediaCommand}"
+                                 Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <controls:MediaCard Margin="0,0,14,14"
+                                                OpenCommand="{Binding DataContext.OpenMediaCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                EditCommand="{Binding DataContext.EditMediaCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                DeleteCommand="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

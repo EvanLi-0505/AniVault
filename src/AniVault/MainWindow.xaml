@@ -1,0 +1,79 @@
+<Window x:Class="AniVault.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:AniVault.ViewModels"
+        Title="AniVault"
+        Height="820" Width="1280"
+        MinHeight="600" MinWidth="960"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Brush.Background}"
+        TextOptions.TextFormattingMode="Ideal">
+
+    <Window.Resources>
+        <!-- Template for one row in the navigation sidebar -->
+        <DataTemplate x:Key="NavRowTemplate" DataType="{x:Type vm:NavItem}">
+            <Grid>
+                <!-- Section header row -->
+                <TextBlock Text="{Binding Label}"
+                           Style="{StaticResource Text.Muted}"
+                           Margin="6,14,0,4"
+                           FontWeight="SemiBold"
+                           Visibility="{Binding IsHeader, Converter={StaticResource BoolToVisibility}}" />
+
+                <!-- Navigable row -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding IsSelectable, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="{Binding Icon}" FontSize="14" Width="24"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left navigation -->
+        <Border Grid.Column="0" Background="{DynamicResource Brush.Surface}"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="18,20,18,10">
+                    <TextBlock Text="AniVault" Style="{StaticResource Text.Heading}" FontSize="20" />
+                    <TextBlock Text="Personal media library" Style="{StaticResource Text.Muted}" />
+                </StackPanel>
+
+                <ListBox x:Name="NavList"
+                         Background="Transparent" BorderThickness="0"
+                         ItemsSource="{Binding NavItems}"
+                         SelectedItem="{Binding SelectedNavItem, Mode=TwoWay}"
+                         ItemTemplate="{StaticResource NavRowTemplate}"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource NavItem}">
+                            <!-- Section headers are not focusable / selectable -->
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Setter Property="Focusable" Value="False" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Content area -->
+        <Grid Grid.Column="1">
+            <ContentControl Style="{StaticResource PageHost}"
+                            Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}" />
+            <ProgressBar Style="{StaticResource BusyBar}" VerticalAlignment="Top"
+                         Visibility="{Binding CurrentViewModel.IsBusy, Converter={StaticResource BoolToVisibility}}" />
+        </Grid>
+    </Grid>
+</Window>

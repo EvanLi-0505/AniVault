@@ -1,0 +1,38 @@
+<Application x:Class="AniVault.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:AniVault.ViewModels"
+             xmlns:views="clr-namespace:AniVault.Views">
+    <!-- No StartupUri: App.xaml.cs decides between first-run setup and the main window. -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Themes/DarkTheme.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- ViewModel-to-View mapping for the shell's content area -->
+            <DataTemplate DataType="{x:Type vm:HomeViewModel}">
+                <views:HomeView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:LibraryViewModel}">
+                <views:LibraryView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
+                <views:PlaceholderView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:MediaDetailViewModel}">
+                <views:MediaDetailView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TagsViewModel}">
+                <views:TagsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SeasonsViewModel}">
+                <views:SeasonsView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

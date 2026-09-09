@@ -1,0 +1,56 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- AniVault LIGHT palette. Same keys as DarkTheme.xaml. -->
+
+    <Color x:Key="Color.Background">#F4F5F7</Color>
+    <Color x:Key="Color.Surface">#FFFFFF</Color>
+    <Color x:Key="Color.SurfaceAlt">#EDEEF2</Color>
+    <Color x:Key="Color.SurfaceHover">#E3E5EB</Color>
+    <Color x:Key="Color.Border">#D6D8DE</Color>
+    <Color x:Key="Color.Primary">#4B6BFF</Color>
+    <Color x:Key="Color.PrimaryHover">#3A59E8</Color>
+    <Color x:Key="Color.PrimaryPressed">#2E49C9</Color>
+    <Color x:Key="Color.OnAccent">#FFFFFF</Color>
+    <Color x:Key="Color.TextPrimary">#1A1C22</Color>
+    <Color x:Key="Color.TextSecondary">#565C6E</Color>
+    <Color x:Key="Color.TextMuted">#888E9E</Color>
+    <Color x:Key="Color.Danger">#D5342B</Color>
+    <Color x:Key="Color.Favorite">#E5484D</Color>
+    <Color x:Key="Color.Star">#E0A100</Color>
+    <Color x:Key="Color.Scrim">#E6F4F5F7</Color>
+    <Color x:Key="Color.ScrimSoft">#00F4F5F7</Color>
+
+    <Color x:Key="Color.StatusPlanned">#6B7180</Color>
+    <Color x:Key="Color.StatusWatching">#4B6BFF</Color>
+    <Color x:Key="Color.StatusCompleted">#2E9E44</Color>
+    <Color x:Key="Color.StatusOnHold">#B27A15</Color>
+    <Color x:Key="Color.StatusDropped">#D5342B</Color>
+
+    <SolidColorBrush x:Key="Brush.Background" Color="{StaticResource Color.Background}" />
+    <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource Color.Surface}" />
+    <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="{StaticResource Color.SurfaceAlt}" />
+    <SolidColorBrush x:Key="Brush.SurfaceHover" Color="{StaticResource Color.SurfaceHover}" />
+    <SolidColorBrush x:Key="Brush.Border" Color="{StaticResource Color.Border}" />
+    <SolidColorBrush x:Key="Brush.Primary" Color="{StaticResource Color.Primary}" />
+    <SolidColorBrush x:Key="Brush.PrimaryHover" Color="{StaticResource Color.PrimaryHover}" />
+    <SolidColorBrush x:Key="Brush.PrimaryPressed" Color="{StaticResource Color.PrimaryPressed}" />
+    <SolidColorBrush x:Key="Brush.OnAccent" Color="{StaticResource Color.OnAccent}" />
+    <SolidColorBrush x:Key="Brush.TextPrimary" Color="{StaticResource Color.TextPrimary}" />
+    <SolidColorBrush x:Key="Brush.TextSecondary" Color="{StaticResource Color.TextSecondary}" />
+    <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
+    <SolidColorBrush x:Key="Brush.Danger" Color="{StaticResource Color.Danger}" />
+    <SolidColorBrush x:Key="Brush.Favorite" Color="{StaticResource Color.Favorite}" />
+    <SolidColorBrush x:Key="Brush.Star" Color="{StaticResource Color.Star}" />
+    <SolidColorBrush x:Key="Brush.Scrim" Color="{StaticResource Color.Scrim}" />
+
+    <SolidColorBrush x:Key="Brush.StatusPlanned" Color="{StaticResource Color.StatusPlanned}" />
+    <SolidColorBrush x:Key="Brush.StatusWatching" Color="{StaticResource Color.StatusWatching}" />
+    <SolidColorBrush x:Key="Brush.StatusCompleted" Color="{StaticResource Color.StatusCompleted}" />
+    <SolidColorBrush x:Key="Brush.StatusOnHold" Color="{StaticResource Color.StatusOnHold}" />
+    <SolidColorBrush x:Key="Brush.StatusDropped" Color="{StaticResource Color.StatusDropped}" />
+
+    <CornerRadius x:Key="Radius.Card">10</CornerRadius>
+    <CornerRadius x:Key="Radius.Control">6</CornerRadius>
+
+</ResourceDictionary>

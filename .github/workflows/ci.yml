@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore AniVault.slnx
+
+      - name: Build
+        run: dotnet build AniVault.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test AniVault.slnx -c Release --no-build --nologo
+
+      - name: Smoke test (genuine first run + every page + theme swap)
+        shell: pwsh
+        env:
+          ANIVAULT_SMOKE: "1"
+        run: |
+          $exeDir = "src/AniVault/bin/Release/net10.0-windows/win-x64"
+          # No pre-seeded config: the app must complete first-run setup on its own.
+          Remove-Item "$exeDir/anivault.config.json" -ErrorAction SilentlyContinue
+          & "$exeDir/AniVault.exe"
+          if ($LASTEXITCODE -ne 0) { throw "Smoke test exited with $LASTEXITCODE" }
+          $crash = "$exeDir/AniVault-startup-error.txt"
+          if (Test-Path $crash) { Get-Content $crash; throw "Startup error file was written" }
+          # The auto-configured data dir is logged; find its app.log.
+          $data = (Get-ChildItem "$env:TEMP" -Filter 'anivault-smoke-*' -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+          $log = Get-Content "$data/Logs/app.log" -Raw
+          Write-Host $log
+          if ($log -notmatch 'Smoke test complete') { throw "Smoke test did not finish" }
+          if ($log -match 'XAML binding') { throw "Binding errors during smoke test" }

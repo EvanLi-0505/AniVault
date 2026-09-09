@@ -1,0 +1,93 @@
+<UserControl x:Class="AniVault.Controls.MediaCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:AniVault.Controls"
+             x:Name="Root" Width="172" RenderTransformOrigin="0.5,0.5">
+
+    <UserControl.RenderTransform>
+        <TranslateTransform x:Name="Lift" Y="0" />
+    </UserControl.RenderTransform>
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="UserControl.MouseEnter">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y"
+                                     To="-3" Duration="0:0:0.12" />
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+        <EventTrigger RoutedEvent="UserControl.MouseLeave">
+            <BeginStoryboard>
+                <Storyboard>
+                    <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y"
+                                     To="0" Duration="0:0:0.12" />
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </UserControl.Triggers>
+
+    <Grid>
+        <!-- Whole card opens the detail page -->
+        <Button Command="{Binding OpenCommand, ElementName=Root}"
+                CommandParameter="{Binding}"
+                Cursor="Hand" Padding="0" BorderThickness="0" Background="Transparent"
+                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                ToolTip="{Binding Title}">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Style="{StaticResource Card}" ClipToBounds="True">
+                        <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Primary}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+
+            <StackPanel>
+                <Grid Height="236">
+                    <Border Background="{DynamicResource Brush.SurfaceAlt}">
+                        <TextBlock Text="No poster" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Style="{StaticResource Text.Muted}" />
+                    </Border>
+                    <Image Source="{Binding Poster}" Stretch="UniformToFill"
+                           Visibility="{Binding Poster, Converter={StaticResource NotEmptyToVisible}}" />
+
+                    <controls:RatingBadge Rating="{Binding RatingValue}"
+                                          HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" />
+                    <TextBlock Text="❤" Foreground="{DynamicResource Brush.Favorite}" FontSize="14"
+                               HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8"
+                               Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVisibility}}" />
+                </Grid>
+
+                <StackPanel Margin="10,8,10,10">
+                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"
+                               FontWeight="SemiBold" MaxHeight="34" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Text.Muted}" Margin="0,3,0,6" />
+                    <controls:StatusBadge Status="{Binding Status}" HorizontalAlignment="Left" />
+                </StackPanel>
+            </StackPanel>
+        </Button>
+
+        <!-- Quick actions, revealed on hover (only when the host supplies the commands) -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,196,8,0"
+                    Visibility="{Binding EditCommand, ElementName=Root, Converter={StaticResource NotEmptyToVisible}}">
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                    <Setter Property="Opacity" Value="0" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                            <Setter Property="Opacity" Value="1" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </StackPanel.Style>
+            <Button Content="Edit" Padding="8,3" FontSize="11" Style="{StaticResource Button.Ghost}"
+                    Command="{Binding EditCommand, ElementName=Root}" CommandParameter="{Binding}" />
+            <Button Content="Delete" Padding="8,3" FontSize="11" Margin="6,0,0,0" Style="{StaticResource Button.DangerGhost}"
+                    Command="{Binding DeleteCommand, ElementName=Root}" CommandParameter="{Binding}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

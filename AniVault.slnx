@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AniVault/AniVault.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AniVault.Tests/AniVault.Tests.csproj" />
+  </Folder>
+</Solution>
