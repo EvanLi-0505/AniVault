@@ -17,8 +17,8 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 
     <!-- Product / version metadata (shown in the EXE properties and About text) -->
-    <Version>0.6.0</Version>
-    <InformationalVersion>0.6.0</InformationalVersion>
+    <Version>0.7.0</Version>
+    <InformationalVersion>0.7.0</InformationalVersion>
     <Product>AniVault</Product>
     <Company>AniVault</Company>
     <Authors>AniVault</Authors>
@@ -48,6 +48,12 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- UI-string tables, read at runtime by LocalizationService via GetManifestResourceStream. -->
+    <EmbeddedResource Include="Resources/Strings/en.json" />
+    <EmbeddedResource Include="Resources/Strings/zh.json" />
   </ItemGroup>
 
 </Project>

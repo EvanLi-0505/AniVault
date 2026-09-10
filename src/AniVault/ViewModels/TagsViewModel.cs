@@ -24,7 +24,9 @@ public sealed partial class TagRowViewModel : ObservableObject
 
     public int MediaCount { get; }
 
-    public string UsageLabel => MediaCount == 1 ? "1 item" : $"{MediaCount} items";
+    public string UsageLabel => MediaCount == 1
+        ? LocalizationService.Instance?.Text("Tags.ItemCountOne") ?? "1 item"
+        : LocalizationService.Instance?.Format("Tags.ItemCountFormat", MediaCount) ?? $"{MediaCount} items";
 }
 
 /// <summary>
@@ -37,6 +39,7 @@ public sealed partial class TagsViewModel : ViewModelBase
     private readonly IDialogService _dialogService;
     private readonly INavigationService _navigation;
     private readonly ILogger<TagsViewModel> _logger;
+    private readonly ILocalizationService _loc;
 
     [ObservableProperty] private bool _isEmpty;
     [ObservableProperty] private string _newTagName = string.Empty;
@@ -45,11 +48,13 @@ public sealed partial class TagsViewModel : ViewModelBase
         ITagService tagService,
         IDialogService dialogService,
         INavigationService navigation,
+        ILocalizationService loc,
         ILogger<TagsViewModel> logger)
     {
         _tagService = tagService;
         _dialogService = dialogService;
         _navigation = navigation;
+        _loc = loc;
         _logger = logger;
     }
 
@@ -96,7 +101,7 @@ public sealed partial class TagsViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to create tag '{Tag}'.", name);
-            _dialogService.ShowError("Could not create that tag.");
+            _dialogService.ShowError(_loc.Text("Tags.CreateFailed"));
         }
     }
 
@@ -108,7 +113,7 @@ public sealed partial class TagsViewModel : ViewModelBase
             return;
         }
 
-        var input = _dialogService.Prompt("Rename tag", "New name:", row.Name);
+        var input = _dialogService.Prompt(_loc.Text("Tags.RenameTitle"), _loc.Text("Tags.RenamePrompt"), row.Name);
         if (string.IsNullOrWhiteSpace(input) || input.Trim() == row.Name)
         {
             return;
@@ -122,7 +127,7 @@ public sealed partial class TagsViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to rename tag {TagId}.", row.Id);
-            _dialogService.ShowError(ex is InvalidOperationException ? ex.Message : "Could not rename that tag.");
+            _dialogService.ShowError(ex is InvalidOperationException ? ex.Message : _loc.Text("Tags.RenameFailed"));
         }
     }
 
@@ -135,9 +140,9 @@ public sealed partial class TagsViewModel : ViewModelBase
         }
 
         var message = row.MediaCount > 0
-            ? $"Delete the tag \"{row.Name}\"? It will be removed from {row.UsageLabel}."
-            : $"Delete the unused tag \"{row.Name}\"?";
-        if (!_dialogService.Confirm(message, "Delete tag"))
+            ? _loc.Format("Tags.DeleteUsedFormat", row.Name, row.UsageLabel)
+            : _loc.Format("Tags.DeleteUnusedFormat", row.Name);
+        if (!_dialogService.Confirm(message, _loc.Text("Tags.DeleteTitle")))
         {
             return;
         }
@@ -149,13 +154,13 @@ public sealed partial class TagsViewModel : ViewModelBase
     [RelayCommand]
     private async Task DeleteUnused()
     {
-        if (!_dialogService.Confirm("Delete every tag that is not attached to any media?", "Clean up tags"))
+        if (!_dialogService.Confirm(_loc.Text("Tags.CleanupConfirm"), _loc.Text("Tags.CleanupTitle")))
         {
             return;
         }
 
         var removed = await _tagService.DeleteUnusedAsync();
-        _dialogService.ShowInfo(removed == 0 ? "There were no unused tags." : $"Removed {removed} unused tag(s).");
+        _dialogService.ShowInfo(removed == 0 ? _loc.Text("Tags.RemovedNone") : _loc.Format("Tags.RemovedFormat", removed));
         await LoadAsync();
     }
 
@@ -168,8 +173,8 @@ public sealed partial class TagsViewModel : ViewModelBase
         }
 
         _navigation.NavigateToDetail<LibraryViewModel>(vm => vm.Configure(new LibraryPreset(
-            $"Tag: {row.Name}",
-            "Every media item with this tag.",
+            _loc.Format("Library.Preset.TagFormat", row.Name),
+            _loc.Text("Library.Preset.TagSub"),
             TagId: row.Id)));
     }
 }

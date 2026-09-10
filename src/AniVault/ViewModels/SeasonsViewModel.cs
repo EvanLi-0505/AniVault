@@ -51,6 +51,7 @@ public sealed partial class SeasonsViewModel : ViewModelBase
     private readonly IMediaCardFactory _cards;
     private readonly INavigationService _navigation;
     private readonly ILogger<SeasonsViewModel> _logger;
+    private readonly ILocalizationService _loc;
 
     private IReadOnlyList<AnimeSeasonBucket> _buckets = Array.Empty<AnimeSeasonBucket>();
 
@@ -62,11 +63,13 @@ public sealed partial class SeasonsViewModel : ViewModelBase
         IMediaQueryService queryService,
         IMediaCardFactory cards,
         INavigationService navigation,
+        ILocalizationService loc,
         ILogger<SeasonsViewModel> logger)
     {
         _queryService = queryService;
         _cards = cards;
         _navigation = navigation;
+        _loc = loc;
         _logger = logger;
     }
 
@@ -187,7 +190,7 @@ public sealed partial class SeasonsViewModel : ViewModelBase
             return;
         }
 
-        CurrentSelectionLabel = $"{year} {EnumDisplay.Label(season)}";
+        CurrentSelectionLabel = _loc.Format("Seasons.SelectionFormat", year, EnumDisplay.Label(season));
 
         var results = await _queryService.QueryAsync(
             new MediaFilter { MediaType = MediaType.Anime, Year = year, Season = season },

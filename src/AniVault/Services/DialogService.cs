@@ -112,7 +112,8 @@ public sealed class DialogService : IDialogService
 
     public DialogChoice AskThreeWay(string message, string title, string primaryLabel, string secondaryLabel)
     {
-        var full = $"{message}\n\nYes = {primaryLabel}\nNo = {secondaryLabel}\nCancel = do nothing";
+        var full = LocalizationService.Instance?.Format("Dialog.ThreeWayFormat", message, primaryLabel, secondaryLabel)
+            ?? $"{message}\n\nYes = {primaryLabel}\nNo = {secondaryLabel}\nCancel = do nothing";
         return MessageBox.Show(full, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question) switch
         {
             MessageBoxResult.Yes => DialogChoice.Primary,

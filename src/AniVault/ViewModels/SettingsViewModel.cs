@@ -22,33 +22,19 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IDialogService _dialogService;
     private readonly IMediaService _mediaService;
     private readonly IThemeService _themeService;
+    private readonly LocalizationService _loc;
     private readonly ILogger<SettingsViewModel> _logger;
 
     private bool _loaded;
 
-    [ObservableProperty]
-    private AppTheme _theme;
-
-    [ObservableProperty]
-    private string _dataDirectory = string.Empty;
-
-    [ObservableProperty]
-    private string _databaseFilePath = string.Empty;
-
-    [ObservableProperty]
-    private string _bootstrapFilePath = string.Empty;
-
-    [ObservableProperty]
-    private string _logsDirectory = string.Empty;
-
-    [ObservableProperty]
-    private int _totalMediaCount;
-
-    [ObservableProperty]
-    private bool _onlineSearchEnabled;
-
-    [ObservableProperty]
-    private bool _posterDownloadEnabled;
+    [ObservableProperty] private AppTheme _theme;
+    [ObservableProperty] private AppLanguage _language;
+    [ObservableProperty] private string _dataDirectory = string.Empty;
+    [ObservableProperty] private string _databaseLine = string.Empty;
+    [ObservableProperty] private string _configLine = string.Empty;
+    [ObservableProperty] private string _mediaStoredLine = string.Empty;
+    [ObservableProperty] private bool _onlineSearchEnabled;
+    [ObservableProperty] private bool _posterDownloadEnabled;
 
     public SettingsViewModel(
         IAppPathService paths,
@@ -57,6 +43,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IDialogService dialogService,
         IMediaService mediaService,
         IThemeService themeService,
+        LocalizationService loc,
         BackupExportViewModel dataManagement,
         MetadataSettingsViewModel metadata,
         ILogger<SettingsViewModel> logger)
@@ -67,12 +54,15 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _dialogService = dialogService;
         _mediaService = mediaService;
         _themeService = themeService;
+        _loc = loc;
         DataManagement = dataManagement;
         Metadata = metadata;
         _logger = logger;
     }
 
     public AppTheme[] ThemeOptions { get; } = Enum.GetValues<AppTheme>();
+
+    public AppLanguage[] LanguageOptions { get; } = Enum.GetValues<AppLanguage>();
 
     /// <summary>Backup / restore / export section, kept as its own component.</summary>
     public BackupExportViewModel DataManagement { get; }
@@ -84,19 +74,20 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         _loaded = false;
 
-        DataDirectory = _paths.DataDirectory ?? "(not configured)";
-        DatabaseFilePath = _paths.IsConfigured ? _paths.DatabaseFilePath : "(not configured)";
-        LogsDirectory = _paths.IsConfigured ? _paths.LogsDirectory : "(not configured)";
-        BootstrapFilePath = _bootstrap.ConfigFilePath;
+        var notConfigured = _loc.Text("Common.NotConfigured");
+        DataDirectory = _paths.DataDirectory ?? notConfigured;
+        DatabaseLine = _loc.Format("Settings.DatabaseFormat", _paths.IsConfigured ? _paths.DatabaseFilePath : notConfigured);
+        ConfigLine = _loc.Format("Settings.ConfigFormat", _bootstrap.ConfigFilePath);
 
         Theme = _themeService.Current;
+        Language = _loc.Current;
         OnlineSearchEnabled = await _settings.GetBoolAsync(SettingKeys.OnlineSearchEnabled, false);
         PosterDownloadEnabled = await _settings.GetBoolAsync(SettingKeys.PosterDownloadEnabled, false);
 
-        TotalMediaCount =
-            await _mediaService.CountAsync(MediaType.Anime)
-            + await _mediaService.CountAsync(MediaType.Movie)
-            + await _mediaService.CountAsync(MediaType.TvSeries);
+        var total = await _mediaService.CountAsync(MediaType.Anime)
+                    + await _mediaService.CountAsync(MediaType.Movie)
+                    + await _mediaService.CountAsync(MediaType.TvSeries);
+        MediaStoredLine = _loc.Format("Settings.MediaStoredFormat", total);
 
         await Metadata.LoadAsync();
 
@@ -111,6 +102,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    partial void OnLanguageChanged(AppLanguage value)
+    {
+        if (_loaded)
+        {
+            _ = _loc.SetLanguageAsync(value);
+        }
+    }
+
     partial void OnOnlineSearchEnabledChanged(bool value)
         => PersistIfLoaded(SettingKeys.OnlineSearchEnabled, value.ToString());
 
@@ -120,18 +119,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void ChangeDataFolder()
     {
-        var picked = _dialogService.PickFolder("Choose a new AniVault data folder", _paths.DataDirectory);
+        var picked = _dialogService.PickFolder(_loc.Text("Settings.ChangeDataFolderPick"), _paths.DataDirectory);
         if (picked is null)
         {
             return;
         }
 
-        var proceed = _dialogService.Confirm(
-            "AniVault will point at the new folder and then close.\n\n"
-            + "Your existing data is NOT moved automatically — copy the contents of the old "
-            + "folder into the new one first if you want to keep it.\n\nContinue?",
-            "Change data folder");
-        if (!proceed)
+        if (!_dialogService.Confirm(_loc.Text("Settings.ChangeConfirm"), _loc.Text("Settings.ChangeConfirmTitle")))
         {
             return;
         }
@@ -141,13 +135,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
             var config = _bootstrap.Load();
             config.DataDirectory = picked;
             _bootstrap.Save(config);
-            _dialogService.ShowInfo("Data folder updated. AniVault will now close; start it again to continue.");
+            _dialogService.ShowInfo(_loc.Text("Settings.ChangeDone"));
             Application_Shutdown();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to change the data folder.");
-            _dialogService.ShowError("Could not update the data folder. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Settings.ChangeFailed"));
         }
     }
 
@@ -159,12 +153,10 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     private void PersistIfLoaded(string key, string? value)
     {
-        if (!_loaded)
+        if (_loaded)
         {
-            return;
+            _ = PersistAsync(key, value);
         }
-
-        _ = PersistAsync(key, value);
     }
 
     private async Task PersistAsync(string key, string? value)
@@ -183,7 +175,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
         {
-            _dialogService.ShowWarning("That folder does not exist yet.");
+            _dialogService.ShowWarning(_loc.Text("Settings.FolderMissing"));
             return;
         }
 

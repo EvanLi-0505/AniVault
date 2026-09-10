@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
              xmlns:controls="clr-namespace:AniVault.Controls"
              xmlns:vm="clr-namespace:AniVault.ViewModels"
              mc:Ignorable="d"
@@ -11,8 +12,8 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,28">
         <StackPanel>
-            <TextBlock Text="Home" Style="{StaticResource Text.Heading}" />
-            <TextBlock Text="Everything here is loaded from your local library." Style="{StaticResource Text.Muted}" Margin="0,4,0,0" />
+            <TextBlock Text="{loc:Loc Home.Title}" Style="{StaticResource Text.Heading}" />
+            <TextBlock Text="{loc:Loc Home.Subtitle}" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" />
 
             <!-- Library totals -->
             <ItemsControl Margin="0,22,0,0">
@@ -22,37 +23,37 @@
                 <Border Style="{StaticResource Card}" Padding="18,14" Margin="0,0,12,0" MinWidth="130">
                     <StackPanel>
                         <TextBlock Text="{Binding AnimeCount}" Style="{StaticResource Text.Heading}" />
-                        <TextBlock Text="Anime" Style="{StaticResource Text.Secondary}" />
+                        <TextBlock Text="{loc:Loc Home.CountAnime}" Style="{StaticResource Text.Secondary}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" Padding="18,14" Margin="0,0,12,0" MinWidth="130">
                     <StackPanel>
                         <TextBlock Text="{Binding MovieCount}" Style="{StaticResource Text.Heading}" />
-                        <TextBlock Text="Movies" Style="{StaticResource Text.Secondary}" />
+                        <TextBlock Text="{loc:Loc Home.CountMovies}" Style="{StaticResource Text.Secondary}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" Padding="18,14" MinWidth="130">
                     <StackPanel>
                         <TextBlock Text="{Binding TvCount}" Style="{StaticResource Text.Heading}" />
-                        <TextBlock Text="TV Series" Style="{StaticResource Text.Secondary}" />
+                        <TextBlock Text="{loc:Loc Home.CountTv}" Style="{StaticResource Text.Secondary}" />
                     </StackPanel>
                 </Border>
             </ItemsControl>
 
             <!-- Empty state -->
-            <controls:EmptyState Title="Your library is empty" Margin="0,24,0,0" HorizontalAlignment="Left"
-                                 Message="Open Anime, Movies or TV Series from the sidebar and add your first item."
+            <controls:EmptyState Title="{loc:Loc Home.EmptyTitle}" Margin="0,24,0,0" HorizontalAlignment="Left"
+                                 Message="{loc:Loc Home.EmptyMessage}"
                                  Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
 
             <StackPanel Margin="0,26,0,0" Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
-                <controls:MediaRow Header="Continue watching" ItemsSource="{Binding ContinueWatching}"
+                <controls:MediaRow Header="{loc:Loc Home.ContinueWatching}" ItemsSource="{Binding ContinueWatching}"
                                    OpenCommand="{Binding OpenMediaCommand}" Margin="0,0,0,20"
                                    Visibility="{Binding HasContinueWatching, Converter={StaticResource BoolToVisibility}}" />
 
-                <controls:MediaRow Header="Recently added" ItemsSource="{Binding RecentlyAdded}"
+                <controls:MediaRow Header="{loc:Loc Home.RecentlyAdded}" ItemsSource="{Binding RecentlyAdded}"
                                    OpenCommand="{Binding OpenMediaCommand}" Margin="0,0,0,20" />
 
-                <controls:MediaRow Header="Highest rated" ItemsSource="{Binding HighestRated}"
+                <controls:MediaRow Header="{loc:Loc Home.HighestRated}" ItemsSource="{Binding HighestRated}"
                                    OpenCommand="{Binding OpenMediaCommand}"
                                    Visibility="{Binding HasHighestRated, Converter={StaticResource BoolToVisibility}}" />
             </StackPanel>

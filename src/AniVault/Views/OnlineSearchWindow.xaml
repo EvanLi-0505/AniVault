@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
         xmlns:vm="clr-namespace:AniVault.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:OnlineSearchViewModel}"
@@ -16,7 +17,7 @@
         <Grid DockPanel.Dock="Bottom" Margin="0,14,0,0">
             <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center"
                        Visibility="{Binding StatusMessage, Converter={StaticResource NotEmptyToVisible}}" />
-            <Button Content="Close" HorizontalAlignment="Right" Style="{StaticResource Button.Ghost}" Command="{Binding CancelCommand}" />
+            <Button Content="{loc:Loc Common.Close}" HorizontalAlignment="Right" Style="{StaticResource Button.Ghost}" Command="{Binding CancelCommand}" />
         </Grid>
 
         <!-- Search bar -->
@@ -29,12 +30,12 @@
             <ComboBox Grid.Column="0" ItemsSource="{Binding Providers}" SelectedItem="{Binding SelectedProvider}"
                       DisplayMemberPath="DisplayName" ToolTip="{Binding SelectedProvider.Description}" />
             <TextBox Grid.Column="1" Margin="8,0,0,0" Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Type a title, then press Enter">
+                     ToolTip="{loc:Loc Online.QueryTooltip}">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Return" Command="{Binding SearchCommand}" />
                 </TextBox.InputBindings>
             </TextBox>
-            <Button Grid.Column="2" Content="Search" Margin="8,0,0,0" Style="{StaticResource Button.Primary}" Command="{Binding SearchCommand}" />
+            <Button Grid.Column="2" Content="{loc:Loc Common.Search}" Margin="8,0,0,0" Style="{StaticResource Button.Primary}" Command="{Binding SearchCommand}" />
         </Grid>
 
         <ProgressBar DockPanel.Dock="Top" Style="{StaticResource BusyBar}" Margin="0,8,0,0"
@@ -75,7 +76,7 @@
             </Border>
 
             <Grid Grid.Column="1" Margin="16,0,0,0">
-                <TextBlock Text="Select a result to preview it." Style="{StaticResource Text.Muted}"
+                <TextBlock Text="{loc:Loc Online.SelectToPreview}" Style="{StaticResource Text.Muted}"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
                            Visibility="{Binding HasPreview, Converter={StaticResource InverseBoolToVisibility}}" />
 
@@ -99,7 +100,7 @@
                                 <TextBlock Text="{Binding PreviewOriginalTitle}" Style="{StaticResource Text.Muted}" Margin="0,2,0,0"
                                            Visibility="{Binding PreviewOriginalTitle, Converter={StaticResource NotEmptyToVisible}}" />
                                 <TextBlock Text="{Binding PreviewFacts}" Style="{StaticResource Text.Secondary}" Margin="0,8,0,0" TextWrapping="Wrap" />
-                                <TextBlock Text="{Binding PreviewGenres, StringFormat='Genres: {0}'}" Style="{StaticResource Text.Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                <TextBlock Text="{Binding PreviewGenresLine}" Style="{StaticResource Text.Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
                                            Visibility="{Binding PreviewGenres, Converter={StaticResource NotEmptyToVisible}}" />
                             </StackPanel>
                         </Grid>
@@ -109,18 +110,18 @@
 
                         <Border Style="{StaticResource Card}" Padding="14" Margin="0,16,0,0">
                             <StackPanel>
-                                <CheckBox Content="Add the provider's genres as tags" IsChecked="{Binding ImportGenresAsTags}" />
-                                <CheckBox Content="Download the poster into my data folder" IsChecked="{Binding DownloadPoster}"
+                                <CheckBox Content="{loc:Loc Online.ImportGenres}" IsChecked="{Binding ImportGenresAsTags}" />
+                                <CheckBox Content="{loc:Loc Online.DownloadPoster}" IsChecked="{Binding DownloadPoster}"
                                           IsEnabled="{Binding PosterDownloadAllowed}" Margin="0,4,0,0" />
-                                <CheckBox Content="Download the backdrop image too" IsChecked="{Binding DownloadBackdrop}"
+                                <CheckBox Content="{loc:Loc Online.DownloadBackdrop}" IsChecked="{Binding DownloadBackdrop}"
                                           IsEnabled="{Binding PosterDownloadAllowed}" Margin="0,4,0,0" />
-                                <TextBlock Text="Poster downloading is off — enable it in Settings to turn these on."
+                                <TextBlock Text="{loc:Loc Online.PosterDownloadOff}"
                                            Style="{StaticResource Text.Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
                                            Visibility="{Binding PosterDownloadAllowed, Converter={StaticResource InverseBoolToVisibility}}" />
                             </StackPanel>
                         </Border>
 
-                        <Button Content="Add to Library" HorizontalAlignment="Left" Margin="0,16,0,0"
+                        <Button Content="{loc:Loc Online.AddToLibrary}" HorizontalAlignment="Left" Margin="0,16,0,0"
                                 Style="{StaticResource Button.Primary}" Command="{Binding AddToLibraryCommand}" />
                     </StackPanel>
                 </ScrollViewer>

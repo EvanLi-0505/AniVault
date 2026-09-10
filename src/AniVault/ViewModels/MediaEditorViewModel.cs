@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AniVault.Models;
 using AniVault.Services;
 using AniVault.Services.Artwork;
+using AniVault.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
     private readonly ITagService _tagService;
     private readonly IArtworkService _artwork;
     private readonly IDialogService _dialogService;
+    private readonly ILocalizationService _loc;
     private readonly ILogger<MediaEditorViewModel> _logger;
 
     private int? _editingId;
@@ -100,6 +102,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
         ITagService tagService,
         IArtworkService artwork,
         IDialogService dialogService,
+        ILocalizationService loc,
         TagPickerViewModel tags,
         ILogger<MediaEditorViewModel> logger)
     {
@@ -107,6 +110,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
         _tagService = tagService;
         _artwork = artwork;
         _dialogService = dialogService;
+        _loc = loc;
         Tags = tags;
         _logger = logger;
     }
@@ -138,7 +142,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
     {
         _editingId = null;
         MediaType = mediaType;
-        WindowTitle = $"Add {mediaType}";
+        WindowTitle = _loc.Format("Editor.AddFormat", EnumDisplay.Label(mediaType));
         await Tags.LoadAsync();
     }
 
@@ -148,13 +152,13 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
         var media = await _mediaService.GetByIdAsync(mediaId);
         if (media is null)
         {
-            _dialogService.ShowError("That media item could not be found.");
+            _dialogService.ShowError(_loc.Text("Editor.NotFound"));
             return false;
         }
 
         _editingId = media.Id;
         MediaType = media.MediaType;
-        WindowTitle = $"Edit {media.Title}";
+        WindowTitle = _loc.Format("Editor.EditFormat", media.Title);
 
         TitleText = media.Title;
         OriginalTitle = media.OriginalTitle;
@@ -184,7 +188,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
     [RelayCommand]
     private void BrowsePoster()
     {
-        var image = PickImage("Select a poster image");
+        var image = PickImage(_loc.Text("Editor.PickPosterTitle"));
         if (image is not null)
         {
             _pickedPosterSourcePath = image;
@@ -202,7 +206,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
     [RelayCommand]
     private void BrowseBackdrop()
     {
-        var image = PickImage("Select a backdrop image");
+        var image = PickImage(_loc.Text("Editor.PickBackdropTitle"));
         if (image is not null)
         {
             _pickedBackdropSourcePath = image;
@@ -278,7 +282,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save media \"{Title}\".", TitleText);
-            _dialogService.ShowError("Could not save this item. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Editor.SaveFailed"));
         }
     }
 
@@ -310,7 +314,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Saved media {MediaId} but an artwork change failed.", mediaId);
-            _dialogService.ShowWarning("The item was saved, but the image could not be applied.");
+            _dialogService.ShowWarning(_loc.Text("Editor.ArtworkFailed"));
         }
     }
 

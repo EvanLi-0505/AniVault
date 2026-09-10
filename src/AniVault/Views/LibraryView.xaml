@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:controls="clr-namespace:AniVault.Controls"
              xmlns:vm="clr-namespace:AniVault.ViewModels"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:LibraryViewModel}"
              Background="{DynamicResource Brush.Background}">
@@ -24,15 +25,13 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
                 <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Heading}" />
-                <TextBlock Style="{StaticResource Text.Muted}" Margin="0,4,0,0">
-                    <Run Text="{Binding Items.Count, Mode=OneWay}" /><Run Text=" shown · " /><Run Text="{Binding Subtitle, Mode=OneWay}" />
-                </TextBlock>
+                <TextBlock Text="{Binding HeaderCountText}" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Content="📅 Browse by season" Margin="0,0,8,0" Style="{StaticResource Button.Ghost}"
+                <Button Content="{loc:Loc Library.BrowseSeasons}" Margin="0,0,8,0" Style="{StaticResource Button.Ghost}"
                         Command="{Binding BrowseSeasonsCommand}"
                         Visibility="{Binding ShowSeasonBrowser, Converter={StaticResource BoolToVisibility}}" />
-                <Button Content="🌐 Search online" Margin="0,0,8,0" Style="{StaticResource Button.Ghost}"
+                <Button Content="{loc:Loc Library.SearchOnline}" Margin="0,0,8,0" Style="{StaticResource Button.Ghost}"
                         Command="{Binding SearchOnlineCommand}"
                         Visibility="{Binding OnlineSearchEnabled, Converter={StaticResource BoolToVisibility}}" />
                 <Button Content="{Binding AddButtonText}"
@@ -46,7 +45,7 @@
 
         <!-- Content -->
         <Grid Grid.Row="2">
-            <controls:EmptyState Title="Nothing to show"
+            <controls:EmptyState Title="{loc:Loc Library.EmptyTitle}"
                                  Message="{Binding EmptyStateText}"
                                  ActionText="{Binding AddButtonText}"
                                  ActionCommand="{Binding AddMediaCommand}"

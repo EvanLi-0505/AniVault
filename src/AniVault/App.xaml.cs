@@ -36,6 +36,8 @@ public partial class App : Application
         {
             _services = BuildServiceProvider();
             _logger = _services.GetRequiredService<ILogger<App>>();
+            // Instantiate now so LocalizationService.Instance is set before any window XAML parses.
+            _services.GetRequiredService<LocalizationService>();
         }
         catch (Exception ex)
         {
@@ -132,6 +134,7 @@ public partial class App : Application
         // schema are current. Migrations are idempotent and never drop user data.
         paths.EnsureDirectoryStructure();
         await _services.GetRequiredService<DatabaseInitializer>().InitializeAsync();
+        await _services.GetRequiredService<LocalizationService>().InitializeAsync();
         await _services.GetRequiredService<IThemeService>().InitializeAsync();
 
         var shell = _services.GetRequiredService<MainWindow>();
@@ -167,6 +170,20 @@ public partial class App : Application
         await Task.Delay(300);
         await themes.SetThemeAsync(AppTheme.Dark);
         _logger!.LogInformation("Smoke: toggled theme.");
+
+        // Exercise the runtime language swap: re-visit every page in Chinese, then restore English.
+        var loc = _services!.GetRequiredService<Services.LocalizationService>();
+        var originalLanguage = loc.Current;
+        await loc.SetLanguageAsync(AppLanguage.Chinese);
+        await Task.Delay(200);
+        foreach (var item in viewModel.NavItems.Where(i => i.IsSelectable).ToList())
+        {
+            viewModel.SelectedNavItem = item;
+            await Task.Delay(120);
+        }
+
+        _logger!.LogInformation("Smoke: visited every page in Chinese.");
+        await loc.SetLanguageAsync(originalLanguage);
 
         // Also open a media detail page if the library has any items.
         var nav = _services!.GetRequiredService<INavigationService>();
@@ -230,6 +247,8 @@ public partial class App : Application
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ISecureSettingsService, SecureSettingsService>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<LocalizationService>();
+        services.AddSingleton<ILocalizationService>(sp => sp.GetRequiredService<LocalizationService>());
         services.AddSingleton<IMediaService, MediaService>();
         services.AddSingleton<IMediaQueryService, MediaQueryService>();
         services.AddSingleton<ITagService, TagService>();

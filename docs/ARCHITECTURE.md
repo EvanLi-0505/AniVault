@@ -44,14 +44,31 @@ Rule of thumb: if a visual pattern appears on two screens, promote it to `Contro
 
 ## Theming
 
-All colours live in `Resources/Themes/DarkTheme.xaml` as `Color.*` / `Brush.*` keys.
-Never hard-code a colour in a View or Control — reference a brush key. A future light
-theme is just a parallel dictionary with the same keys.
+All colours live in `Resources/Themes/{Dark,Light}Theme.xaml` as `Color.*` / `Brush.*` keys —
+the two dictionaries carry the **same key set**. Never hard-code a colour in a View or Control;
+reference a brush key with `{DynamicResource Brush.*}` so `ThemeService`'s runtime swap works.
+Custom `ControlTemplate`s (see the `ComboBox` in `Resources/Styles/Controls.xaml`) must theme
+every part — the stock templates fall back to system colours that vanish on our surfaces.
 
 ## Strings & localization
 
-User-facing enum labels go through `Utilities/EnumDisplay`. Keep other user-facing text
-out of C#; when localization work starts, these become resource lookups.
+Every user-facing string lives in `Resources/Strings/{en,zh}.json` (embedded resources, one
+flat `"Namespace.Key": "value"` map, `{0}` placeholders). The two files **must** have identical
+key sets; `en` is the runtime fallback for a missing key.
+
+- **XAML**: `Text="{loc:Loc Library.EmptyTitle}"` (the `LocExtension` markup extension binds to
+  `LocalizationService.Instance` via an `[key]` indexer, so it re-evaluates on a language change).
+  Add `xmlns:loc="clr-namespace:AniVault.Utilities"` to the file.
+- **ViewModels / services**: inject `ILocalizationService` and call `_loc.Text(key)` /
+  `_loc.Format(key, args)`. Composition-root helpers and value objects with no DI use the static
+  `LocalizationService.Instance?.Text(...) ?? "<english fallback>"`.
+- **Enum labels** go through `Utilities/EnumDisplay`, which looks up `Status.*` / `Type.*` /
+  `Season.*` / `Sort.*` keys.
+- Switching language persists the `language` setting, re-raises the indexer (`"Item[]"`) and
+  fires `LanguageChanged`; `ShellViewModel` rebuilds the nav and the navigation service
+  re-navigates so transient VMs pick up the new language. No restart.
+- Adding a language: new `Resources/Strings/<code>.json` (copy `en.json`, translate), a new
+  `AppLanguage` value, and a `<EmbeddedResource>` entry in the csproj.
 
 ## Offline / network rule
 

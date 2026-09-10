@@ -22,6 +22,7 @@ public sealed partial class BackupExportViewModel : ObservableObject
     private readonly IAppPathService _paths;
     private readonly IDialogService _dialogService;
     private readonly ILogger<BackupExportViewModel> _logger;
+    private readonly ILocalizationService _loc;
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
@@ -34,33 +35,35 @@ public sealed partial class BackupExportViewModel : ObservableObject
         ILibraryExportService exportService,
         IAppPathService paths,
         IDialogService dialogService,
+        ILocalizationService loc,
         ILogger<BackupExportViewModel> logger)
     {
         _backupService = backupService;
         _exportService = exportService;
         _paths = paths;
         _dialogService = dialogService;
+        _loc = loc;
         _logger = logger;
     }
 
-    public string DefaultBackupFolder => _paths.IsConfigured ? _paths.BackupsDirectory : "(not configured)";
+    public string DefaultBackupFolder => _paths.IsConfigured ? _paths.BackupsDirectory : _loc.Text("Common.NotConfigured");
 
     [RelayCommand(CanExecute = nameof(NotWorking))]
     private async Task CreateBackup()
     {
         var folder = _dialogService.PickFolder(
-            "Choose a folder for the backup (e.g. a USB drive)",
+            _loc.Text("Backup.ChooseFolder"),
             _paths.IsConfigured ? _paths.BackupsDirectory : null);
         if (folder is null)
         {
             return;
         }
 
-        await RunAsync("Creating backup…", async () =>
+        await RunAsync(_loc.Text("Backup.Creating"), async () =>
         {
             var path = await _backupService.CreateBackupAsync(folder);
-            StatusMessage = $"Backup saved: {Path.GetFileName(path)}";
-            if (_dialogService.Confirm($"Backup created:\n{path}\n\nOpen the folder now?", "Backup complete"))
+            StatusMessage = _loc.Format("Backup.SavedFormat", Path.GetFileName(path));
+            if (_dialogService.Confirm(_loc.Format("Backup.CompleteFormat", path), _loc.Text("Backup.CompleteTitle")))
             {
                 OpenContainingFolder(path);
             }
@@ -70,7 +73,7 @@ public sealed partial class BackupExportViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(NotWorking))]
     private async Task RestoreBackup()
     {
-        var file = _dialogService.PickFile("Choose an AniVault backup", "AniVault backup (*.zip)|*.zip");
+        var file = _dialogService.PickFile(_loc.Text("Backup.ChooseBackup"), "AniVault backup (*.zip)|*.zip");
         if (file is null)
         {
             return;
@@ -79,29 +82,26 @@ public sealed partial class BackupExportViewModel : ObservableObject
         var inspection = await _backupService.InspectAsync(file);
         if (!inspection.IsValid)
         {
-            _dialogService.ShowError(inspection.Error ?? "That file is not a valid AniVault backup.");
+            _dialogService.ShowError(inspection.Error ?? _loc.Text("Backup.InvalidFormat"));
             return;
         }
 
         var summary = inspection.Manifest is { } m
-            ? $"Created: {m.CreatedAt.LocalDateTime:yyyy-MM-dd HH:mm}\nMedia items: {m.MediaCount}\nTags: {m.TagCount}"
-            : "(manifest details unavailable)";
+            ? _loc.Format("Backup.ManifestFormat", m.CreatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm"), m.MediaCount, m.TagCount)
+            : _loc.Text("Backup.ManifestUnavailable");
 
         var proceed = _dialogService.Confirm(
-            "RESTORING WILL REPLACE YOUR CURRENT LIBRARY.\n\n"
-            + $"Backup: {inspection.FileName}\n{summary}\n\n"
-            + "Everything currently in your data folder (database and artwork) will be overwritten. "
-            + "Consider making a fresh backup first.\n\nContinue?",
-            "Restore from backup");
+            _loc.Format("Backup.RestoreWarnFormat", inspection.FileName, summary),
+            _loc.Text("Backup.RestoreTitle"));
         if (!proceed)
         {
             return;
         }
 
-        await RunAsync("Restoring…", async () =>
+        await RunAsync(_loc.Text("Backup.Restoring"), async () =>
         {
             await _backupService.RestoreAsync(file);
-            _dialogService.ShowInfo("Restore complete. AniVault will now close — start it again to use the restored library.");
+            _dialogService.ShowInfo(_loc.Text("Backup.RestoreDone"));
             System.Windows.Application.Current.Shutdown();
         });
     }
@@ -122,7 +122,7 @@ public sealed partial class BackupExportViewModel : ObservableObject
     private async Task ExportMarkdown()
     {
         var path = _dialogService.PickSaveFile(
-            "Export library to Markdown",
+            _loc.Text("Backup.ExportSaveTitle"),
             "Markdown (*.md)|*.md",
             $"AniVault_Library_{DateTime.Now:yyyy-MM-dd}.md");
         if (path is null)
@@ -130,11 +130,11 @@ public sealed partial class BackupExportViewModel : ObservableObject
             return;
         }
 
-        await RunAsync("Exporting…", async () =>
+        await RunAsync(_loc.Text("Backup.Exporting"), async () =>
         {
             await _exportService.ExportMarkdownAsync(path);
-            StatusMessage = $"Exported: {Path.GetFileName(path)}";
-            if (_dialogService.Confirm($"Markdown written to:\n{path}\n\nOpen the folder now?", "Export complete"))
+            StatusMessage = _loc.Format("Backup.ExportedFormat", Path.GetFileName(path));
+            if (_dialogService.Confirm(_loc.Format("Backup.ExportCompleteFormat", path), _loc.Text("Backup.ExportCompleteTitle")))
             {
                 OpenContainingFolder(path);
             }
@@ -156,7 +156,7 @@ public sealed partial class BackupExportViewModel : ObservableObject
         {
             _logger.LogError(ex, "Backup/export action failed.");
             StatusMessage = string.Empty;
-            _dialogService.ShowError("The operation failed. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Backup.Failed"));
         }
         finally
         {

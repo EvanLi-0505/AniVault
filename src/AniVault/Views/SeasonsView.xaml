@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
              xmlns:controls="clr-namespace:AniVault.Controls"
              xmlns:vm="clr-namespace:AniVault.ViewModels"
              mc:Ignorable="d"
@@ -16,13 +17,13 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
-            <TextBlock Text="Seasons" Style="{StaticResource Text.Heading}" />
-            <TextBlock Text="Anime by original broadcast year and season — not when you watched it."
+            <TextBlock Text="{loc:Loc Seasons.Title}" Style="{StaticResource Text.Heading}" />
+            <TextBlock Text="{loc:Loc Seasons.Subtitle}"
                        Style="{StaticResource Text.Muted}" Margin="0,4,0,0" />
         </StackPanel>
 
-        <controls:EmptyState Grid.Row="1" Title="No dated anime yet"
-                             Message="Add anime with a broadcast year and season, and they will show up here."
+        <controls:EmptyState Grid.Row="1" Title="{loc:Loc Seasons.EmptyTitle}"
+                             Message="{loc:Loc Seasons.EmptyMessage}"
                              Visibility="{Binding HasNoAnime, Converter={StaticResource BoolToVisibility}}" />
 
         <Grid Grid.Row="1" Margin="0,18,0,0"
@@ -90,8 +91,8 @@
                     <TextBlock Text="{Binding CurrentSelectionLabel}" Style="{StaticResource Text.Subheading}" Margin="2,16,0,10" />
                 </StackPanel>
 
-                <controls:EmptyState Title="Nothing this season"
-                                     Message="No anime in your library was broadcast in this season."
+                <controls:EmptyState Title="{loc:Loc Seasons.NothingTitle}"
+                                     Message="{loc:Loc Seasons.NothingMessage}"
                                      Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto"

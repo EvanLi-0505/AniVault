@@ -19,6 +19,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
     private readonly IDialogService _dialogService;
     private readonly DatabaseInitializer _databaseInitializer;
     private readonly ILogger<FirstRunViewModel> _logger;
+    private readonly ILocalizationService _loc;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ContinueCommand))]
@@ -31,11 +32,13 @@ public sealed partial class FirstRunViewModel : ObservableObject
         IAppPathService paths,
         IDialogService dialogService,
         DatabaseInitializer databaseInitializer,
+        ILocalizationService loc,
         ILogger<FirstRunViewModel> logger)
     {
         _paths = paths;
         _dialogService = dialogService;
         _databaseInitializer = databaseInitializer;
+        _loc = loc;
         _logger = logger;
 
         var suggested = Path.Combine(
@@ -50,7 +53,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
     [RelayCommand]
     private void Browse()
     {
-        var picked = _dialogService.PickFolder("Choose where AniVault should store your library", SelectedFolder);
+        var picked = _dialogService.PickFolder(_loc.Text("FirstRun.BrowseTitle"), SelectedFolder);
         if (picked is not null)
         {
             SelectedFolder = picked;
@@ -60,7 +63,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanContinue))]
     private async Task Continue()
     {
-        StatusMessage = "Creating your library…";
+        StatusMessage = _loc.Text("FirstRun.Creating");
         try
         {
             Directory.CreateDirectory(SelectedFolder);
@@ -68,7 +71,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
             if (!IsDirectoryWritable(SelectedFolder))
             {
                 StatusMessage = null;
-                _dialogService.ShowError("That folder is not writable. Please choose another location.");
+                _dialogService.ShowError(_loc.Text("FirstRun.FolderNotWritable"));
                 return;
             }
 
@@ -84,7 +87,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
         {
             _logger.LogError(ex, "First-run setup failed for {Path}.", SelectedFolder);
             StatusMessage = null;
-            _dialogService.ShowError("Setup failed. See the log for details, then try a different folder.");
+            _dialogService.ShowError(_loc.Text("FirstRun.SetupFailed"));
         }
     }
 

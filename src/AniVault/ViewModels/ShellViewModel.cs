@@ -14,6 +14,7 @@ namespace AniVault.ViewModels;
 public sealed partial class ShellViewModel : ObservableObject
 {
     private readonly INavigationService _navigation;
+    private readonly LocalizationService _loc;
 
     [ObservableProperty]
     private ViewModelBase? _currentViewModel;
@@ -21,22 +22,25 @@ public sealed partial class ShellViewModel : ObservableObject
     [ObservableProperty]
     private NavItem? _selectedNavItem;
 
-    public ShellViewModel(INavigationService navigation)
+    public ShellViewModel(INavigationService navigation, LocalizationService localization)
     {
         _navigation = navigation;
+        _loc = localization;
         _navigation.CurrentViewModelChanged += () => CurrentViewModel = _navigation.CurrentViewModel;
 
-        NavItems = BuildNavItems();
+        NavItems = new ObservableCollection<NavItem>(BuildNavItems());
+
+        localization.LanguageChanged += OnLanguageChanged;
     }
 
     public ObservableCollection<NavItem> NavItems { get; }
 
+    public string AppName => _loc.Text("App.Name");
+
+    public string AppTagline => _loc.Text("App.Tagline");
+
     /// <summary>Navigates to the first real page. Called by the shell once the window is shown.</summary>
-    public void NavigateToStart()
-    {
-        var home = NavItems.First(i => i.Label == "Home");
-        SelectedNavItem = home;
-    }
+    public void NavigateToStart() => SelectedNavItem = NavItems.First(i => i.Key == "Home");
 
     partial void OnSelectedNavItemChanged(NavItem? value)
     {
@@ -55,52 +59,68 @@ public sealed partial class ShellViewModel : ObservableObject
         }
     }
 
-    private static ObservableCollection<NavItem> BuildNavItems()
+    private void OnLanguageChanged()
     {
-        // Pages marked "later phase" route to a shared informational placeholder page so the
-        // navigation skeleton is complete and nothing dead-ends. They are wired up in their phase.
-        var items = new List<NavItem>
+        var selectedKey = SelectedNavItem?.Key;
+
+        NavItems.Clear();
+        foreach (var item in BuildNavItems())
         {
-            NavItem.Page("Home", "\U0001F3E0", nav => nav.NavigateTo<HomeViewModel>()),
+            NavItems.Add(item);
+        }
 
-            NavItem.Header("Libraries"),
-            NavItem.Page("Anime", "\U0001F4FA", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.SetMediaType(MediaType.Anime))),
-            NavItem.Page("Movies", "\U0001F3AC", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.SetMediaType(MediaType.Movie))),
-            NavItem.Page("TV Series", "\U0001F4FA", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.SetMediaType(MediaType.TvSeries))),
+        OnPropertyChanged(nameof(AppName));
+        OnPropertyChanged(nameof(AppTagline));
 
-            NavItem.Header("Status"),
-            StatusPage("Planned", "\U0001F4E5", WatchStatus.Planned),
-            StatusPage("Watching", "▶", WatchStatus.Watching),
-            StatusPage("Completed", "✓", WatchStatus.Completed),
-            StatusPage("On Hold", "⏸", WatchStatus.OnHold),
-            StatusPage("Dropped", "✕", WatchStatus.Dropped),
-
-            NavItem.Header("Personal"),
-            NavItem.Page("Favorites", "❤", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
-                new LibraryPreset("Favorites", "Everything you marked as a favorite.", FavoriteOnly: true)))),
-            NavItem.Page("Liked", "\U0001F44D", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
-                new LibraryPreset("Liked", "Everything you marked as liked.", LikedOnly: true)))),
-            NavItem.Page("My Rating", "⭐", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
-                new LibraryPreset("By my rating", "Your library ordered by personal rating.",
-                    SortField: MediaSortField.MyRating, SortDescending: true)))),
-            NavItem.Page("Tags", "\U0001F3F7", nav => nav.NavigateTo<TagsViewModel>()),
-
-            NavItem.Header("Browse"),
-            NavItem.Page("Seasons", "\U0001F4C5", nav => nav.NavigateTo<SeasonsViewModel>()),
-            NavItem.Page("Search", "\U0001F50D", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
-                new LibraryPreset("Search", "Search and filter across every library.")))),
-
-            NavItem.Header(string.Empty),
-            NavItem.Page("Settings", "⚙", nav => nav.NavigateTo<SettingsViewModel>()),
-        };
-
-        return new ObservableCollection<NavItem>(items);
+        // Re-select (and therefore re-navigate) so the current page rebuilds its strings too.
+        var match = NavItems.FirstOrDefault(i => i.Key == selectedKey);
+        if (match is not null)
+        {
+            SelectedNavItem = match;
+        }
     }
 
-    private static NavItem StatusPage(string label, string icon, WatchStatus status)
-        => NavItem.Page(label, icon, nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
-            new LibraryPreset(label, $"Everything with the \"{label}\" status.", Status: status))));
+    private List<NavItem> BuildNavItems()
+    {
+        string L(string key) => _loc.Text(key);
 
-    private static NavItem ComingSoon(string label, string icon, string feature)
-        => NavItem.Page(label, icon, nav => nav.NavigateTo<PlaceholderViewModel>(vm => vm.Describe(label, feature)));
+        return new List<NavItem>
+        {
+            NavItem.Page("Home", L("Nav.Home"), "\U0001F3E0", nav => nav.NavigateTo<HomeViewModel>()),
+
+            NavItem.Header(L("Nav.Section.Libraries")),
+            NavItem.Page("Anime", L("Nav.Anime"), "\U0001F4FA", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.SetMediaType(MediaType.Anime))),
+            NavItem.Page("Movies", L("Nav.Movies"), "\U0001F3AC", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.SetMediaType(MediaType.Movie))),
+            NavItem.Page("TvSeries", L("Nav.TvSeries"), "\U0001F4FA", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.SetMediaType(MediaType.TvSeries))),
+
+            NavItem.Header(L("Nav.Section.Status")),
+            StatusPage("Planned", L("Status.Short.Planned"), "\U0001F4E5", WatchStatus.Planned),
+            StatusPage("Watching", L("Status.Short.Watching"), "▶", WatchStatus.Watching),
+            StatusPage("Completed", L("Status.Short.Completed"), "✓", WatchStatus.Completed),
+            StatusPage("OnHold", L("Status.Short.OnHold"), "⏸", WatchStatus.OnHold),
+            StatusPage("Dropped", L("Status.Short.Dropped"), "✕", WatchStatus.Dropped),
+
+            NavItem.Header(L("Nav.Section.Personal")),
+            NavItem.Page("Favorites", L("Nav.Favorites"), "❤", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
+                new LibraryPreset(L("Library.Preset.Favorites"), L("Library.Preset.FavoritesSub"), FavoriteOnly: true)))),
+            NavItem.Page("Liked", L("Nav.Liked"), "\U0001F44D", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
+                new LibraryPreset(L("Library.Preset.Liked"), L("Library.Preset.LikedSub"), LikedOnly: true)))),
+            NavItem.Page("MyRating", L("Nav.MyRating"), "⭐", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
+                new LibraryPreset(L("Library.Preset.MyRating"), L("Library.Preset.MyRatingSub"),
+                    SortField: MediaSortField.MyRating, SortDescending: true)))),
+            NavItem.Page("Tags", L("Nav.Tags"), "\U0001F3F7", nav => nav.NavigateTo<TagsViewModel>()),
+
+            NavItem.Header(L("Nav.Section.Browse")),
+            NavItem.Page("Seasons", L("Nav.Seasons"), "\U0001F4C5", nav => nav.NavigateTo<SeasonsViewModel>()),
+            NavItem.Page("Search", L("Nav.Search"), "\U0001F50D", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
+                new LibraryPreset(L("Library.Preset.Search"), L("Library.Preset.SearchSub"))))),
+
+            NavItem.Header(string.Empty),
+            NavItem.Page("Settings", L("Nav.Settings"), "⚙", nav => nav.NavigateTo<SettingsViewModel>()),
+        };
+    }
+
+    private NavItem StatusPage(string key, string label, string icon, WatchStatus status)
+        => NavItem.Page(key, label, icon, nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
+            new LibraryPreset(label, _loc.Format("Library.Preset.StatusSubFormat", label), Status: status))));
 }

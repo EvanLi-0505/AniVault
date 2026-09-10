@@ -52,6 +52,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
     private readonly ISettingsService _settings;
     private readonly IDialogService _dialog;
     private readonly ILogger<OnlineSearchViewModel> _logger;
+    private readonly ILocalizationService _loc;
 
     private CancellationTokenSource? _cts;
 
@@ -74,12 +75,14 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
         IMetadataImporter importer,
         ISettingsService settings,
         IDialogService dialog,
+        ILocalizationService loc,
         ILogger<OnlineSearchViewModel> logger)
     {
         _metadata = metadata;
         _importer = importer;
         _settings = settings;
         _dialog = dialog;
+        _loc = loc;
         _logger = logger;
     }
 
@@ -92,8 +95,8 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
     public ObservableCollection<OnlineResultViewModel> Results { get; } = new();
 
     public string HeaderText => PreferredMediaType is { } t
-        ? $"Search online for {EnumDisplay.Label(t)}"
-        : "Search online";
+        ? _loc.Format("Online.TitleFormat", EnumDisplay.Label(t))
+        : _loc.Text("Online.Title");
 
     public bool HasPreview => Preview is not null;
 
@@ -121,17 +124,17 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
 
             if (p.EpisodeCount is { } eps and > 0)
             {
-                parts.Add($"{eps} episodes");
+                parts.Add(_loc.Format("Online.EpisodesFormat", eps));
             }
 
             if (p.RuntimeMinutes is { } rt and > 0)
             {
-                parts.Add($"{rt} min");
+                parts.Add(_loc.Format("Detail.RuntimeMinFormat", rt));
             }
 
             if (p.ProviderRating is { } rating and > 0)
             {
-                parts.Add($"provider score {rating:0.0}");
+                parts.Add(_loc.Format("Online.ProviderScoreFormat", rating.ToString("0.0")));
             }
 
             return string.Join("  ·  ", parts);
@@ -139,6 +142,8 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
     }
 
     public string? PreviewGenres => Preview is { Genres.Count: > 0 } p ? string.Join(", ", p.Genres) : null;
+
+    public string? PreviewGenresLine => PreviewGenres is { } g ? _loc.Format("Online.GenresFormat", g) : null;
 
     public async Task InitializeAsync(MediaType? preferredMediaType)
     {
@@ -177,6 +182,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
         OnPropertyChanged(nameof(PreviewPosterUrl));
         OnPropertyChanged(nameof(PreviewFacts));
         OnPropertyChanged(nameof(PreviewGenres));
+        OnPropertyChanged(nameof(PreviewGenresLine));
         AddToLibraryCommand.NotifyCanExecuteChanged();
     }
 
@@ -190,7 +196,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
 
         if (!provider.IsReady)
         {
-            StatusMessage = $"{provider.DisplayName} needs an API key. Add it in Settings → Metadata.";
+            StatusMessage = _loc.Format("Online.ProviderNeedsKeyFormat", provider.DisplayName);
             return;
         }
 
@@ -214,7 +220,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
                 Results.Add(new OnlineResultViewModel(result));
             }
 
-            StatusMessage = Results.Count == 0 ? "No results. Try a different query or provider." : null;
+            StatusMessage = Results.Count == 0 ? _loc.Text("Online.NoResults") : null;
         }
         catch (OperationCanceledException)
         {
@@ -226,7 +232,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Online search failed.");
-            StatusMessage = "The search failed unexpectedly. Your local library is unaffected.";
+            StatusMessage = _loc.Text("Online.SearchFailed");
         }
         finally
         {
@@ -249,7 +255,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
             Preview = await _metadata.GetDetailsAsync(provider.Source, result.Result.ExternalId, CancellationToken.None);
             if (Preview is null)
             {
-                StatusMessage = "That result has no details available.";
+                StatusMessage = _loc.Text("Online.NoDetails");
             }
         }
         catch (MetadataProviderException ex)
@@ -259,7 +265,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load online preview.");
-            StatusMessage = "Could not load that result's details.";
+            StatusMessage = _loc.Text("Online.DetailsFailed");
         }
         finally
         {
@@ -282,8 +288,8 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
             if (duplicate is { IsPossibleDuplicate: true, ExistingMediaId: { } existingId })
             {
                 var choice = _dialog.AskThreeWay(
-                    duplicate.Reason ?? "This item may already be in your library.",
-                    "Possible duplicate", "open the existing item", "add it anyway");
+                    duplicate.Reason ?? _loc.Text("Online.DupFallback"),
+                    _loc.Text("Online.DuplicateTitle"), _loc.Text("Online.DupOpenExisting"), _loc.Text("Online.DupAddAnyway"));
 
                 if (choice == DialogChoice.Cancel)
                 {
@@ -309,7 +315,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Import from online result failed.");
-            _dialog.ShowError("Could not add that item. See the log for details.");
+            _dialog.ShowError(_loc.Text("Online.ImportFailed"));
         }
         finally
         {

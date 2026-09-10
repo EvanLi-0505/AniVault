@@ -45,6 +45,7 @@ public sealed partial class MetadataSettingsViewModel : ObservableObject
     private readonly IMetadataService _metadata;
     private readonly IDialogService _dialog;
     private readonly ILogger<MetadataSettingsViewModel> _logger;
+    private readonly ILocalizationService _loc;
 
     private bool _loaded;
 
@@ -53,10 +54,12 @@ public sealed partial class MetadataSettingsViewModel : ObservableObject
     public MetadataSettingsViewModel(
         IMetadataService metadata,
         IDialogService dialog,
+        ILocalizationService loc,
         ILogger<MetadataSettingsViewModel> logger)
     {
         _metadata = metadata;
         _dialog = dialog;
+        _loc = loc;
         _logger = logger;
     }
 
@@ -115,19 +118,19 @@ public sealed partial class MetadataSettingsViewModel : ObservableObject
             await _metadata.SetApiKeyAsync(row.Source, row.ApiKeyInput.Trim());
             row.ApiKeyInput = string.Empty;
             row.HasApiKey = true;
-            _dialog.ShowInfo($"{row.DisplayName} API key saved.");
+            _dialog.ShowInfo(_loc.Format("Settings.ApiKeySavedFormat", row.DisplayName));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save API key for {Provider}.", row.Source);
-            _dialog.ShowError("Could not save the API key.");
+            _dialog.ShowError(_loc.Text("Settings.ApiKeySaveFailed"));
         }
     }
 
     [RelayCommand]
     private async Task ClearApiKey(MetadataProviderRow? row)
     {
-        if (row is null || !_dialog.Confirm($"Remove the saved {row.DisplayName} API key?", "Clear API key"))
+        if (row is null || !_dialog.Confirm(_loc.Format("Settings.ApiKeyClearConfirmFormat", row.DisplayName), _loc.Text("Settings.ApiKeyClearTitle")))
         {
             return;
         }

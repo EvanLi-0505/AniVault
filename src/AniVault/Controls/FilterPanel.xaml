@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AniVault.ViewModels"
              xmlns:controls="clr-namespace:AniVault.Controls"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:FilterPanelViewModel}">
 
@@ -18,9 +19,9 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged, Delay=250}"
-                         ToolTip="Search titles, descriptions and tag names (offline)" />
+                         ToolTip="{loc:Loc Filter.SearchTooltip}" />
                 <ComboBox Grid.Column="1" Width="150" Margin="8,0,0,0" SelectedItem="{Binding SortField}"
-                          ItemsSource="{Binding SortFields}" ToolTip="Sort by">
+                          ItemsSource="{Binding SortFields}" ToolTip="{loc:Loc Filter.SortTooltip}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" /></DataTemplate>
                     </ComboBox.ItemTemplate>
@@ -28,13 +29,13 @@
                 <ToggleButton Grid.Column="2" Margin="8,0,0,0" Padding="10,0" MinWidth="42"
                               IsChecked="{Binding SortDescending}"
                               Content="{Binding SortDescending, Converter={StaticResource SortDirectionGlyph}}"
-                              ToolTip="Toggle ascending / descending" />
+                              ToolTip="{loc:Loc Filter.DirectionTooltip}" />
             </Grid>
 
             <!-- Row 2: dropdown filters -->
             <WrapPanel Margin="0,10,0,0">
                 <StackPanel Margin="0,0,12,8" Visibility="{Binding ShowStatus, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="Status" Style="{StaticResource Text.Muted}" />
+                    <TextBlock Text="{loc:Loc Filter.Status}" Style="{StaticResource Text.Muted}" />
                     <ComboBox Width="150" SelectedItem="{Binding Status}" ItemsSource="{Binding StatusOptions}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" /></DataTemplate>
@@ -43,16 +44,16 @@
                 </StackPanel>
 
                 <StackPanel Margin="0,0,12,8">
-                    <TextBlock Text="Year" Style="{StaticResource Text.Muted}" />
+                    <TextBlock Text="{loc:Loc Filter.Year}" Style="{StaticResource Text.Muted}" />
                     <ComboBox Width="110" SelectedItem="{Binding Year}" ItemsSource="{Binding YearOptions}">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate><TextBlock Text="{Binding TargetNullValue='Any'}" /></DataTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Converter={StaticResource YearOrAny}}" /></DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
 
                 <StackPanel Margin="0,0,12,8" Visibility="{Binding ShowSeason, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="Season" Style="{StaticResource Text.Muted}" />
+                    <TextBlock Text="{loc:Loc Filter.Season}" Style="{StaticResource Text.Muted}" />
                     <ComboBox Width="110" SelectedItem="{Binding Season}" ItemsSource="{Binding SeasonOptions}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" /></DataTemplate>
@@ -61,18 +62,18 @@
                 </StackPanel>
 
                 <StackPanel Margin="0,0,12,8">
-                    <TextBlock Text="Min rating" Style="{StaticResource Text.Muted}" />
+                    <TextBlock Text="{loc:Loc Filter.MinRating}" Style="{StaticResource Text.Muted}" />
                     <TextBox Width="70" Text="{Binding MinRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                 </StackPanel>
             </WrapPanel>
 
             <!-- Row 3: toggles -->
             <WrapPanel Margin="0,2,0,0">
-                <CheckBox Content="❤ Favorites only" IsChecked="{Binding FavoriteOnly}" Margin="0,0,16,0"
+                <CheckBox Content="{loc:Loc Filter.FavoritesOnly}" IsChecked="{Binding FavoriteOnly}" Margin="0,0,16,0"
                           Visibility="{Binding ShowFavorite, Converter={StaticResource BoolToVisibility}}" />
-                <CheckBox Content="👍 Liked only" IsChecked="{Binding LikedOnly}" Margin="0,0,16,0"
+                <CheckBox Content="{loc:Loc Filter.LikedOnly}" IsChecked="{Binding LikedOnly}" Margin="0,0,16,0"
                           Visibility="{Binding ShowLiked, Converter={StaticResource BoolToVisibility}}" />
-                <Button Content="Reset filters" Style="{StaticResource Button.Ghost}" Padding="10,4"
+                <Button Content="{loc:Loc Filter.Reset}" Style="{StaticResource Button.Ghost}" Padding="10,4"
                         Command="{Binding ResetCommand}"
                         Visibility="{Binding HasActiveFilters, Converter={StaticResource BoolToVisibility}}" />
             </WrapPanel>
@@ -80,8 +81,8 @@
             <!-- Row 4: tags -->
             <StackPanel Margin="0,8,0,0" Visibility="{Binding Tags.Count, Converter={StaticResource PositiveToVisible}}">
                 <Grid>
-                    <TextBlock Text="Tags" Style="{StaticResource Text.Muted}" />
-                    <CheckBox Content="Match all selected" IsChecked="{Binding MatchAllTags}"
+                    <TextBlock Text="{loc:Loc Filter.Tags}" Style="{StaticResource Text.Muted}" />
+                    <CheckBox Content="{loc:Loc Filter.MatchAll}" IsChecked="{Binding MatchAllTags}"
                               HorizontalAlignment="Right" FontSize="11" />
                 </Grid>
                 <ItemsControl ItemsSource="{Binding Tags}" Margin="0,4,0,0">

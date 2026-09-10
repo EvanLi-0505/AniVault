@@ -31,6 +31,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
     private readonly Metadata.IMetadataService _metadata;
     private readonly Metadata.IMetadataImporter _metadataImporter;
     private readonly ISettingsService _settings;
+    private readonly ILocalizationService _loc;
     private readonly ILogger<MediaDetailViewModel> _logger;
 
     private Media? _media;
@@ -71,12 +72,14 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         Metadata.IMetadataService metadata,
         Metadata.IMetadataImporter metadataImporter,
         ISettingsService settings,
+        ILocalizationService loc,
         ILogger<MediaDetailViewModel> logger)
     {
         _mediaService = mediaService;
         _editorService = editorService;
         _dialogService = dialogService;
         _navigation = navigation;
+        _loc = loc;
         _artwork = artwork;
         _metadata = metadata;
         _metadataImporter = metadataImporter;
@@ -105,7 +108,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
             _media = await _mediaService.GetByIdAsync(MediaId);
             if (_media is null)
             {
-                _dialogService.ShowError("That media item no longer exists.");
+                _dialogService.ShowError(_loc.Text("Detail.NotFound"));
                 _navigation.GoBack();
                 return;
             }
@@ -115,7 +118,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load media detail {MediaId}.", MediaId);
-            _dialogService.ShowError("Could not open this item. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Detail.OpenFailed"));
         }
         finally
         {
@@ -131,11 +134,18 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         OriginalTitle = string.Equals(media.OriginalTitle, media.Title, StringComparison.Ordinal) ? null : media.OriginalTitle;
         Description = media.Description;
         Notes = media.Notes;
-        TypeLabel = EnumDisplay.Label(media.MediaType);
-        BroadcastLabel = FormatBroadcast(media);
-        DateRangeLabel = FormatDateRange(media);
-        RuntimeLabel = media.RuntimeMinutes is { } r and > 0 ? $"{r} min" : null;
-        CountryLabel = media.Country;
+        TypeLabel = _loc.Format("Detail.TypeFormat", EnumDisplay.Label(media.MediaType));
+
+        var broadcast = FormatBroadcast(media);
+        BroadcastLabel = broadcast is null ? null : _loc.Format("Detail.BroadcastFormat", broadcast);
+
+        var range = FormatDateRange(media);
+        DateRangeLabel = range is null ? null : _loc.Format("Detail.DatesFormat", range);
+
+        RuntimeLabel = media.RuntimeMinutes is { } r and > 0
+            ? _loc.Format("Detail.RuntimeFormat", _loc.Format("Detail.RuntimeMinFormat", r))
+            : null;
+        CountryLabel = media.Country is { } c ? _loc.Format("Detail.CountryFormat", c) : null;
         Website = media.OfficialWebsite;
         Tags.Clear();
         foreach (var mt in media.MediaTags.Where(mt => mt.Tag is not null).OrderBy(mt => mt.Tag!.Name))
@@ -163,7 +173,9 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         var total = media.EpisodeCount ?? media.Episodes.Count;
         HasEpisodes = media.Episodes.Count > 0;
         CanGenerateEpisodes = !HasEpisodes && media.EpisodeCount is > 0;
-        EpisodeProgressLabel = total > 0 ? $"{watched} / {total} episodes watched" : "No episode list";
+        EpisodeProgressLabel = total > 0
+            ? _loc.Format("Detail.EpisodeProgressFormat", watched, total)
+            : _loc.Text("Detail.NoEpisodeList");
         ShowCompleteSuggestion = HasEpisodes && watched == media.Episodes.Count && media.Status != WatchStatus.Completed;
 
         _ = RefreshCanRefreshAsync(media);
@@ -223,10 +235,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
             return;
         }
 
-        if (!_dialogService.Confirm(
-                "Re-fetch this item's title, description, dates, episode count and artwork info from the provider?\n\n"
-                + "Your rating, tags, notes, favorite/liked state, watch status and watched episodes are NOT changed.",
-                "Refresh metadata"))
+        if (!_dialogService.Confirm(_loc.Text("Detail.RefreshConfirm"), _loc.Text("Detail.RefreshConfirmTitle")))
         {
             return;
         }
@@ -238,13 +247,13 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
             var metadata = await _metadata.GetDetailsAsync(externalId.Source, externalId.ExternalId, System.Threading.CancellationToken.None);
             if (metadata is null)
             {
-                _dialogService.ShowWarning("The provider returned no data for this item.");
+                _dialogService.ShowWarning(_loc.Text("Detail.RefreshNoData"));
                 return;
             }
 
             await _metadataImporter.RefreshAsync(_media.Id, metadata);
             await ReloadAsync();
-            _dialogService.ShowInfo("Metadata refreshed.");
+            _dialogService.ShowInfo(_loc.Text("Detail.RefreshDone"));
         }
         catch (Metadata.MetadataProviderException ex)
         {
@@ -253,7 +262,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Metadata refresh failed for media {MediaId}.", _media.Id);
-            _dialogService.ShowError("Could not refresh metadata. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Detail.RefreshFailed"));
         }
         finally
         {
@@ -312,7 +321,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
             return;
         }
 
-        if (!_dialogService.Confirm($"Delete \"{_media.Title}\"?\nThis cannot be undone.", "Delete media"))
+        if (!_dialogService.Confirm(_loc.Format("Dialog.DeleteMediaFormat", _media.Title), _loc.Text("Dialog.DeleteMediaTitle")))
         {
             return;
         }
@@ -356,7 +365,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
 
         if (!Uri.TryCreate(Website, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            _dialogService.ShowWarning("This item's website is not a valid http(s) link.");
+            _dialogService.ShowWarning(_loc.Text("Detail.BadWebsite"));
             return;
         }
 
@@ -395,7 +404,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Detail page action failed for media {MediaId}.", MediaId);
-            _dialogService.ShowError("That change could not be saved. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Detail.SaveActionFailed"));
         }
     }
 

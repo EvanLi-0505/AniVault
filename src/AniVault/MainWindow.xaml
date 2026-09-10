@@ -42,8 +42,8 @@
                 BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="18,20,18,10">
-                    <TextBlock Text="AniVault" Style="{StaticResource Text.Heading}" FontSize="20" />
-                    <TextBlock Text="Personal media library" Style="{StaticResource Text.Muted}" />
+                    <TextBlock Text="{Binding AppName}" Style="{StaticResource Text.Heading}" FontSize="20" />
+                    <TextBlock Text="{Binding AppTagline}" Style="{StaticResource Text.Muted}" />
                 </StackPanel>
 
                 <ListBox x:Name="NavList"

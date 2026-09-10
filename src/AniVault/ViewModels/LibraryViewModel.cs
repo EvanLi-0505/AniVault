@@ -42,6 +42,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private readonly IMediaCardFactory _cards;
     private readonly IArtworkService _artwork;
     private readonly INavigationService _navigation;
+    private readonly ILocalizationService _loc;
     private readonly ILogger<LibraryViewModel> _logger;
 
     private LibraryPreset _preset = new("Library", string.Empty);
@@ -49,6 +50,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     [ObservableProperty] private string _title = "Library";
     [ObservableProperty] private string _subtitle = string.Empty;
+    [ObservableProperty] private string _headerCountText = string.Empty;
     [ObservableProperty] private bool _isEmpty;
     [ObservableProperty] private bool _canAdd;
     [ObservableProperty] private bool _showSeasonBrowser;
@@ -65,6 +67,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         IMediaCardFactory cards,
         IArtworkService artwork,
         INavigationService navigation,
+        ILocalizationService loc,
         FilterPanelViewModel filters,
         ILogger<LibraryViewModel> logger)
     {
@@ -77,10 +80,12 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _cards = cards;
         _artwork = artwork;
         _navigation = navigation;
+        _loc = loc;
         Filters = filters;
         _logger = logger;
 
         Filters.Changed += (_, _) => ScheduleReload();
+        Items.CollectionChanged += (_, _) => UpdateHeaderCount();
     }
 
     public FilterPanelViewModel Filters { get; }
@@ -88,10 +93,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public ObservableCollection<MediaCardViewModel> Items { get; } = new();
 
     public string EmptyStateText => Filters.HasActiveFilters
-        ? "No media matches the current filters.\nTry clearing or loosening them."
+        ? _loc.Text("Library.EmptyFiltered")
         : _preset.MediaType is { } t
-            ? $"Your {EnumDisplay.Label(t)} library is empty.\nAdd your first item to get started."
-            : "Nothing here yet.";
+            ? _loc.Format("Library.EmptyMediaTypeFormat", EnumDisplay.Label(t))
+            : _loc.Text("Library.EmptyGeneric");
 
     /// <summary>Applies a preset. Call before navigating; the page reloads in LoadAsync.</summary>
     public void Configure(LibraryPreset preset)
@@ -101,7 +106,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Subtitle = preset.Subtitle;
         CanAdd = preset.MediaType is not null;
         ShowSeasonBrowser = preset.MediaType == MediaType.Anime;
-        AddButtonText = preset.MediaType is { } type ? $"+ Add {EnumDisplay.Label(type)}" : "+ Add media";
+        AddButtonText = preset.MediaType is { } type
+            ? _loc.Format("Library.AddFormat", EnumDisplay.Label(type))
+            : _loc.Text("Library.AddGeneric");
+        UpdateHeaderCount();
 
         Filters.BeginUpdate();
         Filters.Reset();
@@ -120,9 +128,12 @@ public sealed partial class LibraryViewModel : ViewModelBase
     /// <summary>Shorthand for the three library pages.</summary>
     public void SetMediaType(MediaType mediaType)
         => Configure(new LibraryPreset(
-            $"{EnumDisplay.Label(mediaType)} Library",
-            "Browse, filter and sort this library.",
+            _loc.Format("Library.TitleFormat", EnumDisplay.Label(mediaType)),
+            _loc.Text("Library.DefaultSubtitle"),
             MediaType: mediaType));
+
+    private void UpdateHeaderCount()
+        => HeaderCountText = _loc.Format("Library.ItemsShownFormat", Items.Count, Subtitle);
 
     public override async Task LoadAsync()
     {
@@ -192,7 +203,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             return;
         }
 
-        if (!_dialogService.Confirm($"Delete \"{card.Title}\" from your library?\nThis cannot be undone.", "Delete media"))
+        if (!_dialogService.Confirm(_loc.Format("Dialog.DeleteMediaFormat", card.Title), _loc.Text("Dialog.DeleteMediaTitle")))
         {
             return;
         }
@@ -206,7 +217,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to delete media {MediaId}.", card.Id);
-            _dialogService.ShowError("Could not delete that item. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Dialog.DeleteFailed"));
         }
     }
 
@@ -262,7 +273,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load the library view '{Title}'.", Title);
-            _dialogService.ShowError("Could not load this view. See the log for details.");
+            _dialogService.ShowError(_loc.Text("Dialog.LoadLibraryFailed"));
         }
         finally
         {

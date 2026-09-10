@@ -58,8 +58,10 @@ EF migrations: `dotnet dotnet-ef migrations add <Name> --project src/AniVault`.
   the composition root that open a Window).
 - Colours: only `{DynamicResource Brush.*}` from `Resources/Themes/*Theme.xaml`. Never hard-code
   a hex colour in a View/Control (theme switching relies on this).
-- User-facing enum labels go through `Utilities/EnumDisplay`. First version is English;
-  keep strings centralized enough that a localization pass stays feasible.
+- User-facing strings: **never hard-code them**. XAML uses `{loc:Loc Namespace.Key}`; C# uses an
+  injected `ILocalizationService` (`_loc.Text` / `_loc.Format`) or `LocalizationService.Instance`.
+  Every key must exist in **both** `Resources/Strings/en.json` and `zh.json` (identical key sets).
+  Enum labels go through `Utilities/EnumDisplay`. See `docs/ARCHITECTURE.md` → "Strings & localization".
 - Reusable visual pattern used on 2+ screens → promote to a `Controls/` UserControl with
   DependencyProperty inputs.
 
@@ -68,5 +70,5 @@ EF migrations: `dotnet dotnet-ef migrations add <Name> --project src/AniVault`.
 Phases 1–10 of the original spec are done (foundation, DB, CRUD, status/rating/fav/like,
 episodes, tags + combined search/filter/sort, anime seasons, artwork + thumbnails, UI polish,
 metadata providers Bangumi/AniList/TMDB), plus backup/restore, Markdown export, portable
-packaging + installer, and light/dark themes. See `docs/STATUS.md` for the authoritative list
-and what remains.
+packaging + installer, light/dark themes, and full English / 中文 localization (runtime toggle
+in Settings → Appearance). See `docs/STATUS.md` for the authoritative list and what remains.

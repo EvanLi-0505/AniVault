@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using AniVault.Services;
 
 namespace AniVault.Controls;
 
@@ -31,12 +32,12 @@ public partial class RatingStars : UserControl
         if (value is not { } v || v <= 0)
         {
             StarsBlock.Text = "☆☆☆☆☆";
-            NumberBlock.Text = "Not rated";
+            NumberBlock.Text = LocalizationService.Instance?.Text("Card.NotRated") ?? "Not rated";
             return;
         }
 
         var filled = (int)Math.Round(Math.Clamp(v, 0, 10) / 2d, MidpointRounding.AwayFromZero);
         StarsBlock.Text = new string('★', filled) + new string('☆', 5 - filled);
-        NumberBlock.Text = $"{v:0.0} / 10";
+        NumberBlock.Text = LocalizationService.Instance?.Format("Card.RatingFormat", v) ?? $"{v:0.0} / 10";
     }
 }

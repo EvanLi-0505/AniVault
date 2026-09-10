@@ -4,26 +4,27 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AniVault.ViewModels"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SettingsViewModel}"
              Background="{DynamicResource Brush.Background}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,28">
         <StackPanel MaxWidth="720" HorizontalAlignment="Left">
-            <TextBlock Text="Settings" Style="{StaticResource Text.Heading}" />
+            <TextBlock Text="{loc:Loc Settings.Title}" Style="{StaticResource Text.Heading}" />
 
             <!-- Data folder -->
             <Border Style="{StaticResource Card}" Padding="20" Margin="0,20,0,0">
                 <StackPanel>
-                    <TextBlock Text="Data folder" Style="{StaticResource Text.Subheading}" />
-                    <TextBlock Text="Your library database, artwork, logs and backups live here." Style="{StaticResource Text.Muted}" Margin="0,4,0,10" />
+                    <TextBlock Text="{loc:Loc Settings.DataFolder}" Style="{StaticResource Text.Subheading}" />
+                    <TextBlock Text="{loc:Loc Settings.DataFolderDesc}" Style="{StaticResource Text.Muted}" Margin="0,4,0,10" />
                     <TextBlock Text="{Binding DataDirectory}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" />
-                    <TextBlock Text="{Binding DatabaseFilePath, StringFormat='Database: {0}'}" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
-                    <TextBlock Text="{Binding BootstrapFilePath, StringFormat='Config: {0}'}" Style="{StaticResource Text.Muted}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding DatabaseLine}" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding ConfigLine}" Style="{StaticResource Text.Muted}" Margin="0,2,0,0" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                        <Button Content="Open data folder" Style="{StaticResource Button.Ghost}" Command="{Binding OpenDataFolderCommand}" />
-                        <Button Content="Open logs folder" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding OpenLogsFolderCommand}" />
-                        <Button Content="Change data folder…" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding ChangeDataFolderCommand}" />
+                        <Button Content="{loc:Loc Settings.OpenDataFolder}" Style="{StaticResource Button.Ghost}" Command="{Binding OpenDataFolderCommand}" />
+                        <Button Content="{loc:Loc Settings.OpenLogsFolder}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding OpenLogsFolderCommand}" />
+                        <Button Content="{loc:Loc Settings.ChangeDataFolder}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding ChangeDataFolderCommand}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -31,21 +32,21 @@
             <!-- Backup & data -->
             <Border Style="{StaticResource Card}" Padding="20" Margin="0,16,0,0" DataContext="{Binding DataManagement}">
                 <StackPanel>
-                    <TextBlock Text="Backup &amp; data" Style="{StaticResource Text.Subheading}" />
+                    <TextBlock Text="{loc:Loc Settings.BackupData}" Style="{StaticResource Text.Subheading}" />
                     <TextBlock TextWrapping="Wrap" Style="{StaticResource Text.Muted}" Margin="0,4,0,12"
-                               Text="Back up your whole library (database + artwork) to a ZIP you can copy to another drive or computer. On a new machine, install AniVault, then use Restore to load the backup. Everything is offline." />
+                               Text="{loc:Loc Settings.BackupDesc}" />
 
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Back up now…" Style="{StaticResource Button.Primary}" Command="{Binding CreateBackupCommand}" />
-                        <Button Content="Restore from backup…" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding RestoreBackupCommand}" />
-                        <Button Content="Open backup folder" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding OpenBackupFolderCommand}" />
+                        <Button Content="{loc:Loc Settings.BackupNow}" Style="{StaticResource Button.Primary}" Command="{Binding CreateBackupCommand}" />
+                        <Button Content="{loc:Loc Settings.RestoreBackup}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding RestoreBackupCommand}" />
+                        <Button Content="{loc:Loc Settings.OpenBackupFolder}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding OpenBackupFolderCommand}" />
                     </StackPanel>
 
                     <Border Height="1" Background="{DynamicResource Brush.Border}" Margin="0,16" />
 
-                    <TextBlock Text="Export a Markdown document listing everything you have watched — full details, grouped by type and watch status (completed vs. still watching)."
+                    <TextBlock Text="{loc:Loc Settings.ExportDesc}"
                                TextWrapping="Wrap" Style="{StaticResource Text.Muted}" Margin="0,0,0,10" />
-                    <Button Content="Export library to Markdown…" HorizontalAlignment="Left"
+                    <Button Content="{loc:Loc Settings.ExportMarkdown}" HorizontalAlignment="Left"
                             Style="{StaticResource Button.Ghost}" Command="{Binding ExportMarkdownCommand}" />
 
                     <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Text.Secondary}" Margin="0,12,0,0"
@@ -56,19 +57,19 @@
             <!-- Network / online access -->
             <Border Style="{StaticResource Card}" Padding="20" Margin="0,16,0,0">
                 <StackPanel>
-                    <TextBlock Text="Network / online access" Style="{StaticResource Text.Subheading}" />
-                    <TextBlock Text="AniVault never accesses the internet on its own. These switches only allow features that still require an explicit action from you (the 'Search online' and 'Refresh metadata' buttons)."
+                    <TextBlock Text="{loc:Loc Settings.Network}" Style="{StaticResource Text.Subheading}" />
+                    <TextBlock Text="{loc:Loc Settings.NetworkDesc}"
                                Style="{StaticResource Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,10" />
-                    <CheckBox Content="Allow online metadata search" IsChecked="{Binding OnlineSearchEnabled}" />
-                    <CheckBox Content="Allow poster / backdrop downloading" IsChecked="{Binding PosterDownloadEnabled}" />
+                    <CheckBox Content="{loc:Loc Settings.AllowOnlineSearch}" IsChecked="{Binding OnlineSearchEnabled}" />
+                    <CheckBox Content="{loc:Loc Settings.AllowPosterDownload}" IsChecked="{Binding PosterDownloadEnabled}" />
                 </StackPanel>
             </Border>
 
             <!-- Metadata providers -->
             <Border Style="{StaticResource Card}" Padding="20" Margin="0,16,0,0" DataContext="{Binding Metadata}">
                 <StackPanel>
-                    <TextBlock Text="Metadata provider" Style="{StaticResource Text.Subheading}" />
-                    <TextBlock Text="Choose which source 'Search online' and 'Refresh metadata' use. Pick whichever is reachable from your network."
+                    <TextBlock Text="{loc:Loc Settings.MetadataProvider}" Style="{StaticResource Text.Subheading}" />
+                    <TextBlock Text="{loc:Loc Settings.MetadataProviderDesc}"
                                Style="{StaticResource Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,10" />
                     <ItemsControl ItemsSource="{Binding Providers}">
                         <ItemsControl.ItemTemplate>
@@ -91,11 +92,11 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBox Grid.Column="0" Text="{Binding ApiKeyInput, UpdateSourceTrigger=PropertyChanged}"
-                                                         ToolTip="Paste your API key here" />
-                                                <Button Grid.Column="1" Content="Save" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}"
+                                                         ToolTip="{loc:Loc Settings.ApiKeyPlaceholder}" />
+                                                <Button Grid.Column="1" Content="{loc:Loc Settings.ApiKeySave}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}"
                                                         Command="{Binding DataContext.SaveApiKeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}" />
-                                                <Button Grid.Column="2" Content="Clear" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}"
+                                                <Button Grid.Column="2" Content="{loc:Loc Settings.ApiKeyClear}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}"
                                                         Command="{Binding DataContext.ClearApiKeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}" />
                                             </Grid>
@@ -111,19 +112,38 @@
             <!-- Appearance -->
             <Border Style="{StaticResource Card}" Padding="20" Margin="0,16,0,0">
                 <StackPanel>
-                    <TextBlock Text="Appearance" Style="{StaticResource Text.Subheading}" />
-                    <TextBlock Text="Theme" Style="{StaticResource Text.Secondary}" Margin="0,8,0,4" />
-                    <ComboBox ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding Theme}"
-                              Width="160" HorizontalAlignment="Left" />
+                    <TextBlock Text="{loc:Loc Settings.Appearance}" Style="{StaticResource Text.Subheading}" />
+                    <Grid Margin="0,8,0,0" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,24,0">
+                            <TextBlock Text="{loc:Loc Settings.Theme}" Style="{StaticResource Text.Secondary}" Margin="0,0,0,4" />
+                            <ComboBox ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding Theme}" Width="150">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" /></DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{loc:Loc Settings.Language}" Style="{StaticResource Text.Secondary}" Margin="0,0,0,4" />
+                            <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding Language}" Width="150">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" /></DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
 
             <!-- Database -->
             <Border Style="{StaticResource Card}" Padding="20" Margin="0,16,0,24">
                 <StackPanel>
-                    <TextBlock Text="Database" Style="{StaticResource Text.Subheading}" />
-                    <TextBlock Text="{Binding TotalMediaCount, StringFormat='Media items stored: {0}'}" Style="{StaticResource Text.Secondary}" Margin="0,6,0,0" />
-                    <TextBlock Text="Schema is kept up to date automatically with Entity Framework Core migrations. Backup and restore arrive in a later phase."
+                    <TextBlock Text="{loc:Loc Settings.Database}" Style="{StaticResource Text.Subheading}" />
+                    <TextBlock Text="{Binding MediaStoredLine}" Style="{StaticResource Text.Secondary}" Margin="0,6,0,0" />
+                    <TextBlock Text="{loc:Loc Settings.DatabaseDesc}"
                                Style="{StaticResource Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,0" />
                 </StackPanel>
             </Border>

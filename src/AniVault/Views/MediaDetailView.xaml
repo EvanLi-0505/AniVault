@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
              xmlns:controls="clr-namespace:AniVault.Controls"
              xmlns:vm="clr-namespace:AniVault.ViewModels"
              mc:Ignorable="d"
@@ -34,13 +35,13 @@
 
             <!-- Header row -->
             <Grid>
-                <Button Content="← Back" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
+                <Button Content="{loc:Loc Common.Back}" Style="{StaticResource Button.Ghost}" HorizontalAlignment="Left"
                         Command="{Binding GoBackCommand}" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="↻ Refresh metadata" Style="{StaticResource Button.Ghost}" Command="{Binding RefreshMetadataCommand}"
+                    <Button Content="{loc:Loc Detail.RefreshMetadata}" Style="{StaticResource Button.Ghost}" Command="{Binding RefreshMetadataCommand}"
                             Visibility="{Binding CanRefreshMetadata, Converter={StaticResource BoolToVisibility}}" />
-                    <Button Content="Edit" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding EditCommand}" />
-                    <Button Content="Delete" Margin="8,0,0,0" Style="{StaticResource Button.DangerGhost}" Command="{Binding DeleteCommand}" />
+                    <Button Content="{loc:Loc Common.Edit}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding EditCommand}" />
+                    <Button Content="{loc:Loc Common.Delete}" Margin="8,0,0,0" Style="{StaticResource Button.DangerGhost}" Command="{Binding DeleteCommand}" />
                 </StackPanel>
             </Grid>
 
@@ -54,7 +55,7 @@
                 <Border Grid.Column="0" Style="{StaticResource Card}" Width="240" Height="340" ClipToBounds="True">
                     <Grid>
                         <Border Background="{DynamicResource Brush.SurfaceAlt}">
-                            <TextBlock Text="No poster" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            <TextBlock Text="{loc:Loc Card.NoPoster}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Style="{StaticResource Text.Muted}" />
                         </Border>
                         <Image Source="{Binding Poster}" Stretch="UniformToFill"
@@ -76,7 +77,7 @@
                     <!-- Quick personal-data controls -->
                     <WrapPanel Margin="0,16,0,0">
                         <StackPanel Margin="0,0,20,10">
-                            <TextBlock Text="Status" Style="{StaticResource Text.Muted}" Margin="0,0,0,4" />
+                            <TextBlock Text="{loc:Loc Detail.Status}" Style="{StaticResource Text.Muted}" Margin="0,0,0,4" />
                             <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status}" Width="200">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
@@ -87,31 +88,31 @@
                         </StackPanel>
 
                         <StackPanel Margin="0,0,20,10">
-                            <TextBlock Text="My rating (0 - 10)" Style="{StaticResource Text.Muted}" Margin="0,0,0,4" />
+                            <TextBlock Text="{loc:Loc Detail.MyRating}" Style="{StaticResource Text.Muted}" Margin="0,0,0,4" />
                             <TextBox Width="90" Text="{Binding MyRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                         </StackPanel>
 
                         <StackPanel Margin="0,0,0,10" VerticalAlignment="Bottom" Orientation="Horizontal">
                             <ToggleButton IsChecked="{Binding IsFavorite, Mode=OneWay}" Margin="0,0,8,0" Padding="12,7"
-                                          Command="{Binding ToggleFavoriteCommand}" Content="❤ Favorite" />
+                                          Command="{Binding ToggleFavoriteCommand}" Content="{loc:Loc Detail.Favorite}" />
                             <ToggleButton IsChecked="{Binding IsLiked, Mode=OneWay}" Padding="12,7"
-                                          Command="{Binding ToggleLikedCommand}" Content="👍 Liked" />
+                                          Command="{Binding ToggleLikedCommand}" Content="{loc:Loc Detail.Liked}" />
                         </StackPanel>
                     </WrapPanel>
 
                     <!-- Info rows -->
                     <StackPanel Margin="0,14,0,0">
-                        <TextBlock Text="{Binding TypeLabel, StringFormat='Type: {0}'}" Style="{StaticResource Text.Secondary}" Margin="0,2" />
-                        <TextBlock Text="{Binding BroadcastLabel, StringFormat='Broadcast: {0}'}" Style="{StaticResource Text.Secondary}" Margin="0,2"
+                        <TextBlock Text="{Binding TypeLabel}" Style="{StaticResource Text.Secondary}" Margin="0,2" />
+                        <TextBlock Text="{Binding BroadcastLabel}" Style="{StaticResource Text.Secondary}" Margin="0,2"
                                    Visibility="{Binding BroadcastLabel, Converter={StaticResource NotEmptyToVisible}}" />
-                        <TextBlock Text="{Binding DateRangeLabel, StringFormat='Dates: {0}'}" Style="{StaticResource Text.Secondary}" Margin="0,2"
+                        <TextBlock Text="{Binding DateRangeLabel}" Style="{StaticResource Text.Secondary}" Margin="0,2"
                                    Visibility="{Binding DateRangeLabel, Converter={StaticResource NotEmptyToVisible}}" />
-                        <TextBlock Text="{Binding RuntimeLabel, StringFormat='Runtime: {0}'}" Style="{StaticResource Text.Secondary}" Margin="0,2"
+                        <TextBlock Text="{Binding RuntimeLabel}" Style="{StaticResource Text.Secondary}" Margin="0,2"
                                    Visibility="{Binding RuntimeLabel, Converter={StaticResource NotEmptyToVisible}}" />
-                        <TextBlock Text="{Binding CountryLabel, StringFormat='Country: {0}'}" Style="{StaticResource Text.Secondary}" Margin="0,2"
+                        <TextBlock Text="{Binding CountryLabel}" Style="{StaticResource Text.Secondary}" Margin="0,2"
                                    Visibility="{Binding CountryLabel, Converter={StaticResource NotEmptyToVisible}}" />
                         <StackPanel Margin="0,6,0,0" Visibility="{Binding HasTags, Converter={StaticResource BoolToVisibility}}">
-                            <TextBlock Text="Tags" Style="{StaticResource Text.Muted}" />
+                            <TextBlock Text="{loc:Loc Detail.Tags}" Style="{StaticResource Text.Muted}" />
                             <ItemsControl ItemsSource="{Binding Tags}" Margin="0,4,0,0">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -126,7 +127,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
-                        <Button Content="Open official website" HorizontalAlignment="Left" Margin="0,8,0,0"
+                        <Button Content="{loc:Loc Detail.OpenWebsite}" HorizontalAlignment="Left" Margin="0,8,0,0"
                                 Style="{StaticResource Button.Ghost}" Command="{Binding OpenWebsiteCommand}"
                                 Visibility="{Binding HasWebsite, Converter={StaticResource BoolToVisibility}}" />
                     </StackPanel>
@@ -137,7 +138,7 @@
             <Border Style="{StaticResource Card}" Padding="18" Margin="0,18,0,0"
                     Visibility="{Binding HasDescription, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
-                    <TextBlock Text="Description" Style="{StaticResource Text.Subheading}" />
+                    <TextBlock Text="{loc:Loc Detail.Description}" Style="{StaticResource Text.Subheading}" />
                     <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,8,0,0" />
                 </StackPanel>
             </Border>
@@ -146,15 +147,15 @@
             <Border Style="{StaticResource Card}" Padding="18" Margin="0,16,0,0">
                 <StackPanel>
                     <Grid>
-                        <TextBlock Text="Episodes" Style="{StaticResource Text.Subheading}" />
+                        <TextBlock Text="{loc:Loc Detail.Episodes}" Style="{StaticResource Text.Subheading}" />
                         <TextBlock Text="{Binding EpisodeProgressLabel}" Style="{StaticResource Text.Muted}" HorizontalAlignment="Right" />
                     </Grid>
 
-                    <Button Content="Create episode list" Margin="0,12,0,0" HorizontalAlignment="Left"
+                    <Button Content="{loc:Loc Detail.CreateEpisodeList}" Margin="0,12,0,0" HorizontalAlignment="Left"
                             Style="{StaticResource Button.Ghost}" Command="{Binding GenerateEpisodesCommand}"
                             Visibility="{Binding CanGenerateEpisodes, Converter={StaticResource BoolToVisibility}}" />
 
-                    <TextBlock Text="No episode list yet. Set an episode count on this item to create one."
+                    <TextBlock Text="{loc:Loc Detail.NoEpisodesHint}"
                                Style="{StaticResource Text.Muted}" Margin="0,10,0,0"
                                Visibility="{Binding HasEpisodes, Converter={StaticResource InverseBoolToVisibility}}" />
 
@@ -178,8 +179,8 @@
                     <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="6" Padding="12,10" Margin="0,10,0,0"
                             Visibility="{Binding ShowCompleteSuggestion, Converter={StaticResource BoolToVisibility}}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="All episodes watched." VerticalAlignment="Center" Style="{StaticResource Text.Secondary}" />
-                            <Button Content="Mark as Completed" Margin="12,0,0,0" Style="{StaticResource Button.Primary}"
+                            <TextBlock Text="{loc:Loc Detail.AllWatched}" VerticalAlignment="Center" Style="{StaticResource Text.Secondary}" />
+                            <Button Content="{loc:Loc Detail.MarkCompleted}" Margin="12,0,0,0" Style="{StaticResource Button.Primary}"
                                     Command="{Binding MarkCompletedCommand}" />
                         </StackPanel>
                     </Border>
@@ -190,7 +191,7 @@
             <Border Style="{StaticResource Card}" Padding="18" Margin="0,16,0,24"
                     Visibility="{Binding HasNotes, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
-                    <TextBlock Text="My notes" Style="{StaticResource Text.Subheading}" />
+                    <TextBlock Text="{loc:Loc Detail.MyNotes}" Style="{StaticResource Text.Subheading}" />
                     <TextBlock Text="{Binding Notes}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,8,0,0" />
                 </StackPanel>
             </Border>

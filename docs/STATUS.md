@@ -96,6 +96,21 @@
 - `Resources/Themes/{Dark,Light}Theme.xaml` — same key set, swapped at runtime by `ThemeService`.
 - Settings → Appearance → Theme (Dark / Light); choice persisted, applied on startup.
 - Every View/Control uses `DynamicResource Brush.*`, so the swap is instant with no restart.
+- Retemplated `ComboBox` / `ComboBoxItem` (`Resources/Styles/Controls.xaml`): themed popup
+  (`Brush.Surface`), readable item text, hover / selected states — the stock template rendered
+  near-invisible text on the custom surface.
+
+### Localization (English / 中文) — *done*
+- `LocalizationService` + `Resources/Strings/{en,zh}.json` (embedded, ~305 keys each, identical
+  key sets, `{0}`-style placeholders). `en` is the fallback for any missing key.
+- XAML uses the `{loc:Loc Key}` markup extension (binds to an `INotifyPropertyChanged` indexer);
+  C# uses `_loc.Text(key)` / `_loc.Format(key, args)` or the non-DI `LocalizationService.Instance`.
+- Settings → Appearance → Language (English / 中文); persisted (`language` setting), applied on
+  startup. Switching re-raises the string indexer and fires `LanguageChanged`, so open pages and
+  the sidebar update live with no restart; transient VMs rebuild on navigation.
+- `EnumDisplay` resolves `WatchStatus` / `MediaType` / `AnimeSeason` / `MediaSortField` labels
+  through the string table.
+- Smoke test re-visits every page in Chinese, then restores the previous language.
 
 ### UI polish (Phase 9) — *done*
 - Page transitions: content fades + rises when navigating (`PageHost` style).
@@ -139,18 +154,22 @@
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 59 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 61 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, episode sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort, tag service, season mapping + buckets,
   artwork import/thumbnail/clear/delete, AniList + Bangumi JSON→DTO mapping, metadata import +
   duplicate detection + refresh-preserves-personal-data, online-search gate, encrypted API keys,
   theme persistence).
-- Navigation smoke test: all 16 sidebar pages + a media detail page + a runtime theme swap,
-  with zero exceptions, zero binding errors, and **zero network requests**.
+- `dotnet test AniVault.slnx` — 61 passing.
+- Navigation smoke test: all 16 sidebar pages + a media detail page + a runtime theme swap +
+  a full second page tour in Chinese, with zero exceptions, zero binding errors, and
+  **zero network requests**.
 - Published single-file exe + installed exe: launch offline, migrate, show the dark UI.
 
 ## Not implemented yet
 - Additional providers beyond the three (Phase 11) — the abstraction makes this drop-in.
-- UI-string localization (e.g. Chinese) — strings are centralized enough for it but not yet extracted.
+- Localization covers English + 中文; adding a third language is a new `Resources/Strings/<code>.json`
+  plus an `AppLanguage` enum value.
+- A few OS file-dialog filter captions ("Images (*.jpg…)", "Markdown (*.md)") are still English-only.
 - Editing a media item's episode count later does not auto-resync the episode list (use the detail-page button).
 - Live network tests are not in the automated suite (provider mapping is covered with canned responses).

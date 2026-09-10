@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:loc="clr-namespace:AniVault.Utilities"
         xmlns:vm="clr-namespace:AniVault.ViewModels"
         xmlns:controls="clr-namespace:AniVault.Controls"
         mc:Ignorable="d"
@@ -21,8 +22,8 @@
     <DockPanel Margin="24">
         <!-- Action buttons -->
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-            <Button Content="Cancel" Style="{StaticResource Button.Ghost}" Command="{Binding CancelCommand}" />
-            <Button Content="Save" Margin="10,0,0,0" Style="{StaticResource Button.Primary}" Command="{Binding SaveCommand}" />
+            <Button Content="{loc:Loc Common.Cancel}" Style="{StaticResource Button.Ghost}" Command="{Binding CancelCommand}" />
+            <Button Content="{loc:Loc Common.Save}" Margin="10,0,0,0" Style="{StaticResource Button.Primary}" Command="{Binding SaveCommand}" />
         </StackPanel>
 
         <TextBlock DockPanel.Dock="Top" Text="{Binding WindowTitle}" Style="{StaticResource Text.Heading}" FontSize="18" Margin="0,0,0,4" />
@@ -30,16 +31,16 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
             <StackPanel Margin="0,0,12,0">
 
-                <TextBlock Text="Title *" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                <TextBlock Text="{loc:Loc Editor.TitleField}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
                 <TextBox Text="{Binding TitleText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" />
 
-                <TextBlock Text="Original title" Style="{StaticResource FieldLabel}" />
+                <TextBlock Text="{loc:Loc Editor.OriginalTitle}" Style="{StaticResource FieldLabel}" />
                 <TextBox Text="{Binding OriginalTitle}" />
 
-                <TextBlock Text="Alternative titles (one per line)" Style="{StaticResource FieldLabel}" />
+                <TextBlock Text="{loc:Loc Editor.AltTitles}" Style="{StaticResource FieldLabel}" />
                 <TextBox Text="{Binding AlternativeTitles}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="52" />
 
-                <TextBlock Text="Description" Style="{StaticResource FieldLabel}" />
+                <TextBlock Text="{loc:Loc Editor.Description}" Style="{StaticResource FieldLabel}" />
                 <TextBox Text="{Binding Description}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80" />
 
                 <Grid>
@@ -52,12 +53,12 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Year" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Year}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding AirYear, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Visibility="{Binding ShowAnimeFields, Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="Season" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Season}" Style="{StaticResource FieldLabel}" />
                         <ComboBox ItemsSource="{Binding AnimeSeasonOptions}" SelectedItem="{Binding AirSeason}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -68,14 +69,14 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="4">
-                        <TextBlock Text="Episodes" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Episodes}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding EpisodeCount, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                     </StackPanel>
                 </Grid>
 
                 <Grid Visibility="{Binding ShowRuntimeField, Converter={StaticResource BoolToVisibility}}">
                     <StackPanel HorizontalAlignment="Left" Width="180">
-                        <TextBlock Text="Runtime (minutes)" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.RuntimeMinutes}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding RuntimeMinutes, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                     </StackPanel>
                 </Grid>
@@ -87,11 +88,11 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Start date" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.StartDate}" Style="{StaticResource FieldLabel}" />
                         <DatePicker SelectedDate="{Binding StartDate}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="End date" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.EndDate}" Style="{StaticResource FieldLabel}" />
                         <DatePicker SelectedDate="{Binding EndDate}" />
                     </StackPanel>
                 </Grid>
@@ -103,11 +104,11 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Country" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Country}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding Country}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Official website" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Website}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding OfficialWebsite}" />
                     </StackPanel>
                 </Grid>
@@ -119,7 +120,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Status" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Status}" Style="{StaticResource FieldLabel}" />
                         <ComboBox ItemsSource="{Binding WatchStatusOptions}" SelectedItem="{Binding Status}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -129,17 +130,17 @@
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="My rating (0 - 10)" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.MyRating}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding MyRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                     </StackPanel>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                    <CheckBox Content="❤ Favorite" IsChecked="{Binding IsFavorite}" Margin="0,0,20,0" />
-                    <CheckBox Content="👍 Liked" IsChecked="{Binding IsLiked}" />
+                    <CheckBox Content="{loc:Loc Editor.Favorite}" IsChecked="{Binding IsFavorite}" Margin="0,0,20,0" />
+                    <CheckBox Content="{loc:Loc Editor.Liked}" IsChecked="{Binding IsLiked}" />
                 </StackPanel>
 
-                <TextBlock Text="Tags" Style="{StaticResource FieldLabel}" />
+                <TextBlock Text="{loc:Loc Editor.Tags}" Style="{StaticResource FieldLabel}" />
                 <ItemsControl ItemsSource="{Binding Tags.SelectedTags}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -163,11 +164,11 @@
                             <KeyBinding Key="Return" Command="{Binding Tags.AddTagCommand}" />
                         </ComboBox.InputBindings>
                     </ComboBox>
-                    <Button Grid.Column="1" Content="Add tag" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}"
+                    <Button Grid.Column="1" Content="{loc:Loc Editor.AddTag}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}"
                             Command="{Binding Tags.AddTagCommand}" />
                 </Grid>
 
-                <TextBlock Text="Notes (private, never sent anywhere)" Style="{StaticResource FieldLabel}" />
+                <TextBlock Text="{loc:Loc Editor.Notes}" Style="{StaticResource FieldLabel}" />
                 <TextBox Text="{Binding Notes}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
 
                 <Grid Margin="0,4,0,0">
@@ -178,36 +179,36 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Poster" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Poster}" Style="{StaticResource FieldLabel}" />
                         <Border Style="{StaticResource Card}" Height="180" Width="128" HorizontalAlignment="Left" ClipToBounds="True">
                             <Grid>
-                                <TextBlock Text="No poster" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource Text.Muted}" />
+                                <TextBlock Text="{loc:Loc Editor.NoPoster}" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource Text.Muted}" />
                                 <Image Source="{Binding PosterDisplayPath}" Stretch="UniformToFill"
                                        Visibility="{Binding PosterDisplayPath, Converter={StaticResource NotEmptyToVisible}}" />
                             </Grid>
                         </Border>
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <Button Content="Choose…" Style="{StaticResource Button.Ghost}" Command="{Binding BrowsePosterCommand}" />
-                            <Button Content="Clear" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding ClearPosterCommand}" />
+                            <Button Content="{loc:Loc Common.Choose}" Style="{StaticResource Button.Ghost}" Command="{Binding BrowsePosterCommand}" />
+                            <Button Content="{loc:Loc Common.Clear}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding ClearPosterCommand}" />
                         </StackPanel>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Backdrop" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{loc:Loc Editor.Backdrop}" Style="{StaticResource FieldLabel}" />
                         <Border Style="{StaticResource Card}" Height="120" ClipToBounds="True">
                             <Grid>
-                                <TextBlock Text="No backdrop" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource Text.Muted}" />
+                                <TextBlock Text="{loc:Loc Editor.NoBackdrop}" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource Text.Muted}" />
                                 <Image Source="{Binding BackdropDisplayPath}" Stretch="UniformToFill"
                                        Visibility="{Binding BackdropDisplayPath, Converter={StaticResource NotEmptyToVisible}}" />
                             </Grid>
                         </Border>
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <Button Content="Choose…" Style="{StaticResource Button.Ghost}" Command="{Binding BrowseBackdropCommand}" />
-                            <Button Content="Clear" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding ClearBackdropCommand}" />
+                            <Button Content="{loc:Loc Common.Choose}" Style="{StaticResource Button.Ghost}" Command="{Binding BrowseBackdropCommand}" />
+                            <Button Content="{loc:Loc Common.Clear}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding ClearBackdropCommand}" />
                         </StackPanel>
                     </StackPanel>
                 </Grid>
-                <TextBlock Text="Images are copied into your data folder when you save." Style="{StaticResource Text.Muted}" Margin="0,6,0,0" />
+                <TextBlock Text="{loc:Loc Editor.ImagesNote}" Style="{StaticResource Text.Muted}" Margin="0,6,0,0" />
 
             </StackPanel>
         </ScrollViewer>
