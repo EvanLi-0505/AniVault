@@ -63,6 +63,12 @@
 - Sidebar wired up: each **status**, **Favorites**, **Liked**, **My Rating** and **Search** are now
   real filtered library views (were placeholders).
 
+### Online metadata search — discoverability
+- The library header "🌐 Search online" button is now always shown on the Anime / Movies /
+  TV Series pages (it was hidden entirely until `network.onlineSearchEnabled` was on, so users
+  couldn't find it). If online search is off, pressing it asks to turn it on first (one Yes),
+  then continues — still no network until the user explicitly enables it *and* runs a search.
+
 ### Metadata providers (Phase 10) — *done*
 - `Metadata/IMetadataProvider` + three isolated providers, **user-selectable in Settings**:
   - **Bangumi** (default) — Chinese titles, no key; may need a VPN in mainland China.
@@ -96,9 +102,17 @@
 - `Resources/Themes/{Dark,Light}Theme.xaml` — same key set, swapped at runtime by `ThemeService`.
 - Settings → Appearance → Theme (Dark / Light); choice persisted, applied on startup.
 - Every View/Control uses `DynamicResource Brush.*`, so the swap is instant with no restart.
-- Retemplated `ComboBox` / `ComboBoxItem` (`Resources/Styles/Controls.xaml`): themed popup
-  (`Brush.Surface`), readable item text, hover / selected states — the stock template rendered
-  near-invisible text on the custom surface.
+- Retemplated `ComboBox` / `ComboBoxItem` and `DatePickerTextBox` / `Calendar` / `CalendarItem` /
+  `CalendarDayButton` / `CalendarButton` (`Resources/Styles/Controls.xaml`): themed popup /
+  drop-down (`Brush.Surface`), readable text, hover / selected states — the stock templates
+  rendered near-invisible text (and a hard-coded dark-grey day-of-week header) on the dark surface.
+- Fixed a first-run crash ("Something went wrong, but AniVault will keep running"): the shell's
+  `PageHost` page-transition used a `Binding.TargetUpdated` `ControlTemplate` trigger whose
+  `Storyboard.TargetName` failed to resolve during the first layout pass
+  (`'P' name cannot be found in the name scope`). The fade/lift is now driven from
+  `MainWindow.OnPageChanged` code-behind (animating the `ContentControl` by reference).
+- The smoke test now also load-and-closes the Add-media editor, Online-search, First-run and a
+  bare themed `Calendar` (in all three display modes) — the page tour never opened these.
 
 ### Localization (English / 中文) — *done*
 - `LocalizationService` + `Resources/Strings/{en,zh}.json` (embedded, ~305 keys each, identical

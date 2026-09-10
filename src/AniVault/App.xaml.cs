@@ -195,8 +195,65 @@ public partial class App : Application
             _logger!.LogInformation("Smoke: opened detail for media {Id}.", media[0].Id);
         }
 
+        // Load-and-close each modal window so a broken window template surfaces in the log
+        // (the page tour above never opens these).
+        await SmokeShowWindowAsync("Add-media editor", () =>
+        {
+            var vm = _services!.GetRequiredService<ViewModels.MediaEditorViewModel>();
+            _ = vm.InitializeForNewAsync(Models.MediaType.Anime);
+            return new Views.MediaEditorWindow { DataContext = vm, Owner = shell };
+        });
+        await SmokeShowWindowAsync("Online search", () =>
+        {
+            var vm = _services!.GetRequiredService<ViewModels.OnlineSearchViewModel>();
+            _ = vm.InitializeAsync(Models.MediaType.Anime);
+            return new Views.OnlineSearchWindow { DataContext = vm, Owner = shell };
+        });
+        await SmokeShowWindowAsync("First-run", () =>
+            new Views.FirstRunWindow { DataContext = _services!.GetRequiredService<ViewModels.FirstRunViewModel>(), Owner = shell });
+
+        // Exercise the themed Calendar / DatePicker drop-down templates in all three display modes.
+        await SmokeShowWindowAsync("Calendar", () =>
+        {
+            var calendar = new System.Windows.Controls.Calendar { SelectedDate = DateTime.Today };
+            var window = new Window { Content = calendar, Owner = shell, Width = 300, Height = 300 };
+            window.Loaded += async (_, _) =>
+            {
+                foreach (var mode in new[]
+                {
+                    System.Windows.Controls.CalendarMode.Year,
+                    System.Windows.Controls.CalendarMode.Decade,
+                    System.Windows.Controls.CalendarMode.Month,
+                })
+                {
+                    calendar.DisplayMode = mode;
+                    await Task.Delay(60);
+                }
+            };
+            return window;
+        });
+
         _logger!.LogInformation("Smoke test complete.");
         Shutdown();
+    }
+
+    private async Task SmokeShowWindowAsync(string name, Func<System.Windows.Window> create)
+    {
+        try
+        {
+            var window = create();
+            window.ShowInTaskbar = false;
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Left = -10000;
+            window.Show();
+            await Task.Delay(250);
+            window.Close();
+            _logger!.LogInformation("Smoke: opened '{Window}'.", name);
+        }
+        catch (Exception ex)
+        {
+            _logger!.LogError(ex, "Smoke: window '{Window}' failed to open.", name);
+        }
     }
 
     /// <summary>Shows the modal first-run window. Returns true when setup completed successfully.</summary>

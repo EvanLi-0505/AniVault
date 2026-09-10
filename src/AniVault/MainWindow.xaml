@@ -70,8 +70,13 @@
 
         <!-- Content area -->
         <Grid Grid.Column="1">
-            <ContentControl Style="{StaticResource PageHost}"
-                            Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}" />
+            <ContentControl x:Name="PageHost"
+                            Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}"
+                            Binding.TargetUpdated="OnPageChanged">
+                <ContentControl.RenderTransform>
+                    <TranslateTransform />
+                </ContentControl.RenderTransform>
+            </ContentControl>
             <ProgressBar Style="{StaticResource BusyBar}" VerticalAlignment="Top"
                          Visibility="{Binding CurrentViewModel.IsBusy, Converter={StaticResource BoolToVisibility}}" />
         </Grid>

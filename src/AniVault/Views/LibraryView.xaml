@@ -33,7 +33,7 @@
                         Visibility="{Binding ShowSeasonBrowser, Converter={StaticResource BoolToVisibility}}" />
                 <Button Content="{loc:Loc Library.SearchOnline}" Margin="0,0,8,0" Style="{StaticResource Button.Ghost}"
                         Command="{Binding SearchOnlineCommand}"
-                        Visibility="{Binding OnlineSearchEnabled, Converter={StaticResource BoolToVisibility}}" />
+                        Visibility="{Binding CanAdd, Converter={StaticResource BoolToVisibility}}" />
                 <Button Content="{Binding AddButtonText}"
                         Style="{StaticResource Button.Primary}" Command="{Binding AddMediaCommand}"
                         Visibility="{Binding CanAdd, Converter={StaticResource BoolToVisibility}}" />

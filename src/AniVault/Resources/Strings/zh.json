@@ -295,6 +295,8 @@
   "Online.EpisodesFormat": "{0} 集",
   "Online.ProviderScoreFormat": "提供方评分 {0}",
   "Online.SearchDisabled": "在线检索元数据已关闭，请先在设置中开启。",
+  "Online.EnableTitle": "开启在线检索？",
+  "Online.EnablePrompt": "在线检索会从 Bangumi、AniList 或 TMDB 获取作品的简介、日期和海报。在你开启之前 AniVault 完全离线，且只会在你点击按钮时才联网。\n\n现在开启吗？（之后可在“设置 → 网络”中更改。）",
 
   "Placeholder.Format": "「{0}」计划在后续开发阶段实现。",
   "Placeholder.ComingSoon": "敬请期待",

@@ -178,6 +178,17 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [RelayCommand]
     private async Task SearchOnline()
     {
+        if (!OnlineSearchEnabled)
+        {
+            if (!_dialogService.Confirm(_loc.Text("Online.EnablePrompt"), _loc.Text("Online.EnableTitle")))
+            {
+                return;
+            }
+
+            await _settings.SetAsync(SettingKeys.OnlineSearchEnabled, true.ToString());
+            OnlineSearchEnabled = true;
+        }
+
         var newId = await _onlineSearch.SearchAndImportAsync(_preset.MediaType);
         if (newId is { } id)
         {

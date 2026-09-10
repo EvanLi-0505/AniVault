@@ -295,6 +295,8 @@
   "Online.EpisodesFormat": "{0} episodes",
   "Online.ProviderScoreFormat": "provider score {0}",
   "Online.SearchDisabled": "Online metadata search is turned off. Enable it in Settings first.",
+  "Online.EnableTitle": "Turn on online search?",
+  "Online.EnablePrompt": "Online search looks up a title's description, dates and poster from Bangumi, AniList or TMDB. AniVault stays offline until you turn this on, and it only ever runs when you press a button.\n\nTurn it on now? (You can change this later in Settings → Network.)",
 
   "Placeholder.Format": "\"{0}\" is planned for a later development phase.",
   "Placeholder.ComingSoon": "Coming soon",
