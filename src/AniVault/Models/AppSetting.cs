@@ -21,6 +21,7 @@ public static class SettingKeys
     public const string Theme = "theme";
     public const string Language = "language";
     public const string MetadataProvider = "metadata.provider";
+    public const string CustomProvider = "metadata.customProvider";
     public const string OnlineSearchEnabled = "network.onlineSearchEnabled";
     public const string PosterDownloadEnabled = "network.posterDownloadEnabled";
     public const string SchemaNote = "schema.note";

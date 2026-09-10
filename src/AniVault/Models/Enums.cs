@@ -49,4 +49,9 @@ public enum ExternalSource
     Bangumi = 0,
     AniList = 1,
     Tmdb = 2,
+    Jikan = 3,
+    Kitsu = 4,
+
+    /// <summary>A single user-defined REST provider configured in Settings.</summary>
+    Custom = 5,
 }

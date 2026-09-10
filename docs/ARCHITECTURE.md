@@ -75,8 +75,12 @@ key sets; `en` is the runtime fallback for a missing key.
 The only network code lives under `Metadata/`. It is called **only** from an explicit
 button (`Search online`, `Refresh metadata`), only when `network.onlineSearchEnabled` is on,
 and never on startup, on a timer, or in the background. Poster/backdrop downloads need the
-separate `network.posterDownloadEnabled` switch too. New providers implement
-`IMetadataProvider` and register in `App.xaml.cs`; nothing else changes.
+separate `network.posterDownloadEnabled` switch too. A new built-in provider implements
+`IMetadataProvider` (compose a `ProviderHttp`), adds one `AddSingleton<IMetadataProvider, …>`
+line in `App.xaml.cs`, and an `ExternalSource` enum value; `MetadataService` keys providers by
+`Source` and the Settings list picks them up automatically. `IMetadataProvider.IsConfigured`
+defaults to `true` — override it only for a provider that can be present but unusable (the
+user-defined `CustomMetadataProvider`, driven by `CustomProviderConfig` + `JsonPath`).
 
 API keys go through `ISecureSettingsService` (DPAPI-encrypted). Never log a key or a full URL
 that contains one.

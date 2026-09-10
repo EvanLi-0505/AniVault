@@ -21,6 +21,16 @@ public sealed class FakeHttpClientFactory : IHttpClientFactory
         return this;
     }
 
+    /// <summary>Like <see cref="On(string,string,HttpStatusCode)"/> but the response body can inspect the request.</summary>
+    public FakeHttpClientFactory OnRequest(string urlContains, Func<HttpRequestMessage, string> respond)
+    {
+        _rules.Add((urlContains, req => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(respond(req), System.Text.Encoding.UTF8, "application/json"),
+        }));
+        return this;
+    }
+
     public HttpClient CreateClient(string name) => new(new Handler(_rules));
 
     private sealed class Handler : HttpMessageHandler

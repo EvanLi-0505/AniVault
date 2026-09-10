@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using AniVault.Models;
 using AniVault.Services;
+using AniVault.Services.Logging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IMediaService _mediaService;
     private readonly IThemeService _themeService;
     private readonly LocalizationService _loc;
+    private readonly FileLoggerProvider _fileLogger;
     private readonly ILogger<SettingsViewModel> _logger;
 
     private bool _loaded;
@@ -44,6 +46,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IMediaService mediaService,
         IThemeService themeService,
         LocalizationService loc,
+        FileLoggerProvider fileLogger,
         BackupExportViewModel dataManagement,
         MetadataSettingsViewModel metadata,
         ILogger<SettingsViewModel> logger)
@@ -55,6 +58,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _mediaService = mediaService;
         _themeService = themeService;
         _loc = loc;
+        _fileLogger = fileLogger;
         DataManagement = dataManagement;
         Metadata = metadata;
         _logger = logger;
@@ -150,6 +154,33 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [RelayCommand]
     private void OpenLogsFolder() => OpenInExplorer(_paths.IsConfigured ? _paths.LogsDirectory : null);
+
+    [RelayCommand]
+    private void ClearLogs()
+    {
+        if (!_paths.IsConfigured)
+        {
+            _dialogService.ShowWarning(_loc.Text("Settings.FolderMissing"));
+            return;
+        }
+
+        if (!_dialogService.Confirm(_loc.Text("Settings.ClearLogsConfirm"), _loc.Text("Settings.ClearLogsTitle")))
+        {
+            return;
+        }
+
+        try
+        {
+            _fileLogger.Clear();
+            _logger.LogInformation("Log files cleared by the user from Settings.");
+            _dialogService.ShowInfo(_loc.Text("Settings.ClearLogsDone"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to clear the log files.");
+            _dialogService.ShowError(_loc.Text("Settings.ClearLogsFailed"));
+        }
+    }
 
     private void PersistIfLoaded(string key, string? value)
     {

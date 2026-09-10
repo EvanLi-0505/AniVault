@@ -69,6 +69,7 @@ EF migrations: `dotnet dotnet-ef migrations add <Name> --project src/AniVault`.
 
 Phases 1–10 of the original spec are done (foundation, DB, CRUD, status/rating/fav/like,
 episodes, tags + combined search/filter/sort, anime seasons, artwork + thumbnails, UI polish,
-metadata providers Bangumi/AniList/TMDB), plus backup/restore, Markdown export, portable
-packaging + installer, light/dark themes, and full English / 中文 localization (runtime toggle
-in Settings → Appearance). See `docs/STATUS.md` for the authoritative list and what remains.
+metadata providers Bangumi/AniList/Jikan/Kitsu/TMDB + one user-defined REST provider), plus
+backup/restore, compact per-title Markdown export, portable packaging + installer, light/dark
+themes, and full English / 中文 localization (runtime toggle in Settings → Appearance). See
+`docs/STATUS.md` for the authoritative list and what remains.

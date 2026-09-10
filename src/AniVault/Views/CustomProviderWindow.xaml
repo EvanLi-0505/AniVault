@@ -1,0 +1,107 @@
+<Window x:Class="AniVault.Views.CustomProviderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:loc="clr-namespace:AniVault.Utilities"
+        xmlns:vm="clr-namespace:AniVault.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:CustomProviderViewModel}"
+        Title="{loc:Loc CustomProvider.Title}"
+        Height="720" Width="560"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource Brush.Background}">
+
+    <Window.Resources>
+        <Style x:Key="Fld" TargetType="TextBlock" BasedOn="{StaticResource Text.Secondary}">
+            <Setter Property="Margin" Value="0,10,0,3" />
+        </Style>
+        <Style x:Key="SectionHead" TargetType="TextBlock" BasedOn="{StaticResource Text.Subheading}">
+            <Setter Property="Margin" Value="0,18,0,2" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="22">
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,16,0,0" LastChildFill="False">
+            <Button DockPanel.Dock="Left" Content="{loc:Loc CustomProvider.Delete}" Style="{StaticResource Button.Ghost}"
+                    Command="{Binding DeleteCommand}" />
+            <Button DockPanel.Dock="Right" Content="{loc:Loc Common.Save}" Style="{StaticResource Button.Primary}" Command="{Binding SaveCommand}" />
+            <Button DockPanel.Dock="Right" Content="{loc:Loc Common.Cancel}" Margin="0,0,10,0" Style="{StaticResource Button.Ghost}" Command="{Binding CancelCommand}" />
+        </DockPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="{loc:Loc CustomProvider.Intro}" Style="{StaticResource Text.Muted}"
+                   TextWrapping="Wrap" Margin="0,0,0,4" />
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
+            <StackPanel Margin="0,0,10,0">
+
+                <TextBlock Text="{loc:Loc CustomProvider.Name}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.Name, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.SearchUrl}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.SearchUrl, UpdateSourceTrigger=PropertyChanged}"
+                         d:Text="https://api.example.com/search?q={query}" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.DetailsUrl}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.DetailsUrl, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.MediaType}" Style="{StaticResource Fld}" />
+                <ComboBox ItemsSource="{Binding MediaTypeOptions}" SelectedItem="{Binding Config.MediaType}" HorizontalAlignment="Left" Width="160" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.AuthSection}" Style="{StaticResource SectionHead}" />
+                <TextBlock Text="{loc:Loc CustomProvider.AuthHeader}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.ApiKeyHeader, UpdateSourceTrigger=PropertyChanged}" d:Text="Authorization" />
+                <TextBlock Text="{loc:Loc CustomProvider.AuthPrefix}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.ApiKeyPrefix, UpdateSourceTrigger=PropertyChanged}" d:Text="Bearer " />
+                <TextBlock Text="{loc:Loc CustomProvider.ApiKey}" Style="{StaticResource Fld}" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding ApiKeyInput, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Grid.Column="1" Content="{loc:Loc Settings.ApiKeyClear}" Margin="8,0,0,0"
+                            Style="{StaticResource Button.Ghost}" Command="{Binding ClearApiKeyCommand}" />
+                </Grid>
+                <TextBlock Style="{StaticResource Text.Muted}" Margin="0,4,0,0"
+                           Text="{loc:Loc Settings.ApiKeySaved}"
+                           Visibility="{Binding HasApiKey, Converter={StaticResource BoolToVisibility}}" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.ResultsMapping}" Style="{StaticResource SectionHead}" />
+                <TextBlock Text="{loc:Loc CustomProvider.PathHint}" Style="{StaticResource Text.Muted}" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.ResultsPath}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.ResultsPath, UpdateSourceTrigger=PropertyChanged}" d:Text="data" />
+                <TextBlock Text="{loc:Loc CustomProvider.IdField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.IdField, UpdateSourceTrigger=PropertyChanged}" d:Text="id" />
+                <TextBlock Text="{loc:Loc CustomProvider.TitleField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.TitleField, UpdateSourceTrigger=PropertyChanged}" d:Text="title" />
+                <TextBlock Text="{loc:Loc CustomProvider.SecondaryTitleField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.SecondaryTitleField, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.YearField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.YearField, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.PosterField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.PosterField, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.SummaryField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.SummaryField, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.DetailsMapping}" Style="{StaticResource SectionHead}" />
+                <TextBlock Text="{loc:Loc CustomProvider.DetailsHint}" Style="{StaticResource Text.Muted}" TextWrapping="Wrap" />
+
+                <TextBlock Text="{loc:Loc CustomProvider.DescriptionField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.DescriptionField, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.EpisodeCountField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.EpisodeCountField, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.RuntimeField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.RuntimeField, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.RatingField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.RatingField, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.GenresPath}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.GenresPath, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{loc:Loc CustomProvider.GenreNameField}" Style="{StaticResource Fld}" />
+                <TextBox Text="{Binding Config.GenreNameField, UpdateSourceTrigger=PropertyChanged}" />
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

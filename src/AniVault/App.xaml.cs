@@ -135,6 +135,7 @@ public partial class App : Application
         paths.EnsureDirectoryStructure();
         await _services.GetRequiredService<DatabaseInitializer>().InitializeAsync();
         await _services.GetRequiredService<LocalizationService>().InitializeAsync();
+        await _services.GetRequiredService<Metadata.ICustomProviderStore>().LoadAsync();
         await _services.GetRequiredService<IThemeService>().InitializeAsync();
 
         var shell = _services.GetRequiredService<MainWindow>();
@@ -211,6 +212,12 @@ public partial class App : Application
         });
         await SmokeShowWindowAsync("First-run", () =>
             new Views.FirstRunWindow { DataContext = _services!.GetRequiredService<ViewModels.FirstRunViewModel>(), Owner = shell });
+        await SmokeShowWindowAsync("Custom provider", () =>
+        {
+            var vm = _services!.GetRequiredService<ViewModels.CustomProviderViewModel>();
+            _ = vm.LoadAsync();
+            return new Views.CustomProviderWindow { DataContext = vm, Owner = shell };
+        });
 
         // Exercise the themed Calendar / DatePicker drop-down templates in all three display modes.
         await SmokeShowWindowAsync("Calendar", () =>
@@ -284,8 +291,8 @@ public partial class App : Application
             builder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
             builder.AddFilter("Microsoft", LogLevel.Warning);
             builder.AddDebug();
-            builder.Services.AddSingleton<ILoggerProvider>(sp =>
-                new FileLoggerProvider(sp.GetRequiredService<IAppPathService>()));
+            builder.Services.AddSingleton<FileLoggerProvider>();
+            builder.Services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<FileLoggerProvider>());
         });
 
         // Core infrastructure
@@ -323,12 +330,17 @@ public partial class App : Application
             client.DefaultRequestHeaders.UserAgent.ParseAdd($"AniVault/{appVersion} (personal media library)");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         });
-        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.AniListProvider>();
+        services.AddSingleton<Metadata.ICustomProviderStore, Metadata.CustomProviderStore>();
         services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.BangumiProvider>();
+        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.AniListProvider>();
+        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.JikanProvider>();
+        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.KitsuProvider>();
         services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.TmdbProvider>();
+        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.CustomMetadataProvider>();
         services.AddSingleton<Metadata.IMetadataService, Metadata.MetadataService>();
         services.AddSingleton<Metadata.IMetadataImporter, Metadata.MetadataImporter>();
         services.AddSingleton<IOnlineSearchService, OnlineSearchService>();
+        services.AddSingleton<ICustomProviderService, CustomProviderService>();
 
         // ViewModels
         services.AddSingleton<ShellViewModel>();
@@ -341,6 +353,7 @@ public partial class App : Application
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<BackupExportViewModel>();
         services.AddTransient<MetadataSettingsViewModel>();
+        services.AddTransient<CustomProviderViewModel>();
         services.AddTransient<OnlineSearchViewModel>();
         services.AddTransient<PlaceholderViewModel>();
         services.AddTransient<MediaEditorViewModel>();

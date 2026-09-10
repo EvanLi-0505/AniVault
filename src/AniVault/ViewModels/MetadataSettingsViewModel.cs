@@ -44,6 +44,7 @@ public sealed partial class MetadataSettingsViewModel : ObservableObject
 {
     private readonly IMetadataService _metadata;
     private readonly IDialogService _dialog;
+    private readonly ICustomProviderService _customProvider;
     private readonly ILogger<MetadataSettingsViewModel> _logger;
     private readonly ILocalizationService _loc;
 
@@ -54,11 +55,13 @@ public sealed partial class MetadataSettingsViewModel : ObservableObject
     public MetadataSettingsViewModel(
         IMetadataService metadata,
         IDialogService dialog,
+        ICustomProviderService customProvider,
         ILocalizationService loc,
         ILogger<MetadataSettingsViewModel> logger)
     {
         _metadata = metadata;
         _dialog = dialog;
+        _customProvider = customProvider;
         _loc = loc;
         _logger = logger;
     }
@@ -102,6 +105,15 @@ public sealed partial class MetadataSettingsViewModel : ObservableObject
         if (row is not null)
         {
             ActiveProvider = row;
+        }
+    }
+
+    [RelayCommand]
+    private async Task EditCustomProvider()
+    {
+        if (await _customProvider.EditAsync())
+        {
+            await LoadAsync();
         }
     }
 

@@ -37,9 +37,13 @@
 
 ### Markdown export — *requested*
 - `LibraryExportService` + `MarkdownLibraryWriter` (pluggable writer).
-- Settings → "Export library to Markdown…": summary table, then sections per media type,
-  split by watch status (completed vs. watching vs. planned…), with full per-item details,
-  episode progress, tags, dates, notes, external IDs.
+- Settings → "Export library to Markdown…": a small summary table, then a section per media
+  type (`## Anime (n)`), split into watch-status groups (`### ✓ Completed (n)`), **one compact
+  line per title** — name, broadcast year/season, ★personal rating, episode progress, ❤/👍
+  marks, tags — with the original title and any notes on indented follow-up lines. Items are
+  ordered by personal rating within each group. Headings/labels are localized (en / 中文).
+- The logs section of Settings also has **"Clear logs"** (deletes `app.log` / `app.log.1`
+  under the write lock; the app keeps logging afterwards).
 
 ### Packaging (Phase 13) — *requested*
 - App icon generated from code (`build/make-icon.ps1` → committed `AniVault.ico`).
@@ -70,10 +74,18 @@
   then continues — still no network until the user explicitly enables it *and* runs a search.
 
 ### Metadata providers (Phase 10) — *done*
-- `Metadata/IMetadataProvider` + three isolated providers, **user-selectable in Settings**:
-  - **Bangumi** (default) — Chinese titles, no key; may need a VPN in mainland China.
+- `Metadata/IMetadataProvider` + isolated providers, **user-selectable in Settings**:
+  - **Bangumi** (default) — anime & live-action, Chinese titles, no key; may need a VPN in mainland China.
   - **AniList** — anime, no key; often works without a VPN but the API is sometimes down.
+  - **Jikan (MyAnimeList)** — anime, no key; MAL data, English/Japanese titles, usually no VPN needed.
+  - **Kitsu** — anime, no key; English/romaji titles (uses JSON:API).
   - **TMDB** — movies & TV; needs a free API key (entered in Settings, stored DPAPI-encrypted).
+  - **Custom** — one user-defined REST provider. "Edit custom provider…" in Settings takes a
+    search URL with `{query}`, an optional details URL with `{id}`, an optional API-key header
+    (key stored DPAPI-encrypted), and dotted JSON field paths (`data.results[0].title`).
+    Config JSON lives in `SettingKeys.CustomProvider`; `CustomProviderStore` loads it at startup.
+    `JsonPath` is the tiny path selector; `IMetadataProvider.IsConfigured` (default `true`)
+    keeps an un-set-up custom provider out of the "ready" set.
 - `MetadataService`: picks the active provider, isolates API keys, and **refuses every network
   call unless "online metadata search" is enabled** in Settings.
 - `ProviderHttp`: one configured `HttpClient` (20s timeout, cancellation), friendly errors for
@@ -168,20 +180,23 @@
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 61 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 84 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, episode sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort, tag service, season mapping + buckets,
-  artwork import/thumbnail/clear/delete, AniList + Bangumi JSON→DTO mapping, metadata import +
-  duplicate detection + refresh-preserves-personal-data, online-search gate, encrypted API keys,
-  theme persistence).
-- `dotnet test AniVault.slnx` — 61 passing.
+  artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
+  `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
+  metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
+  encrypted API keys, theme persistence).
 - Navigation smoke test: all 16 sidebar pages + a media detail page + a runtime theme swap +
-  a full second page tour in Chinese, with zero exceptions, zero binding errors, and
-  **zero network requests**.
+  a full second page tour in Chinese + load-and-close of the editor / online-search / first-run /
+  custom-provider windows and a themed `Calendar`, with zero exceptions, zero binding errors,
+  and **zero network requests**.
 - Published single-file exe + installed exe: launch offline, migrate, show the dark UI.
 
 ## Not implemented yet
-- Additional providers beyond the three (Phase 11) — the abstraction makes this drop-in.
+- More built-in providers are drop-in (`IMetadataProvider` + one DI line + an `ExternalSource` value).
+- The custom provider supports exactly **one** configuration and a fixed set of fields; it has no
+  "test" button and no non-JSON response support.
 - Localization covers English + 中文; adding a third language is a new `Resources/Strings/<code>.json`
   plus an `AppLanguage` enum value.
 - A few OS file-dialog filter captions ("Images (*.jpg…)", "Markdown (*.md)") are still English-only.

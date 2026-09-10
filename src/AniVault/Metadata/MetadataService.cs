@@ -68,7 +68,7 @@ public sealed class MetadataService : IMetadataService
             var hasKey = !provider.RequiresApiKey || !string.IsNullOrWhiteSpace(await GetApiKeyAsync(provider.Source, cancellationToken));
             infos.Add(new MetadataProviderInfo(
                 provider.Source, provider.DisplayName, provider.Description,
-                provider.RequiresApiKey, hasKey, IsReady: hasKey));
+                provider.RequiresApiKey, hasKey, IsReady: hasKey && provider.IsConfigured));
         }
 
         return infos;

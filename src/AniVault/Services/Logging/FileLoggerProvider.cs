@@ -34,6 +34,31 @@ public sealed class FileLoggerProvider : ILoggerProvider
     {
     }
 
+    /// <summary>
+    /// Deletes the current and rotated log files. Safe to call while the app is running —
+    /// the next entry simply recreates <c>app.log</c>. Shares the write lock so it can never
+    /// race a log write.
+    /// </summary>
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            if (!_paths.IsConfigured)
+            {
+                return;
+            }
+
+            foreach (var name in new[] { "app.log", "app.log.1" })
+            {
+                var path = Path.Combine(_paths.LogsDirectory, name);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+        }
+    }
+
     internal void Write(string categoryName, LogLevel level, string message, Exception? exception)
     {
         if (!_paths.IsConfigured)

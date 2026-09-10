@@ -21,11 +21,17 @@
                     <TextBlock Text="{Binding DataDirectory}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" />
                     <TextBlock Text="{Binding DatabaseLine}" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
                     <TextBlock Text="{Binding ConfigLine}" Style="{StaticResource Text.Muted}" Margin="0,2,0,0" TextWrapping="Wrap" />
-                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                        <Button Content="{loc:Loc Settings.OpenDataFolder}" Style="{StaticResource Button.Ghost}" Command="{Binding OpenDataFolderCommand}" />
-                        <Button Content="{loc:Loc Settings.OpenLogsFolder}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding OpenLogsFolderCommand}" />
-                        <Button Content="{loc:Loc Settings.ChangeDataFolder}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding ChangeDataFolderCommand}" />
-                    </StackPanel>
+                    <WrapPanel Margin="0,14,0,-8">
+                        <WrapPanel.Resources>
+                            <Style TargetType="Button" BasedOn="{StaticResource Button.Ghost}">
+                                <Setter Property="Margin" Value="0,0,8,8" />
+                            </Style>
+                        </WrapPanel.Resources>
+                        <Button Content="{loc:Loc Settings.OpenDataFolder}" Command="{Binding OpenDataFolderCommand}" />
+                        <Button Content="{loc:Loc Settings.OpenLogsFolder}" Command="{Binding OpenLogsFolderCommand}" />
+                        <Button Content="{loc:Loc Settings.ClearLogs}" Command="{Binding ClearLogsCommand}" />
+                        <Button Content="{loc:Loc Settings.ChangeDataFolder}" Command="{Binding ChangeDataFolderCommand}" />
+                    </WrapPanel>
                 </StackPanel>
             </Border>
 
@@ -106,6 +112,8 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <Button Content="{loc:Loc Settings.EditCustomProvider}" HorizontalAlignment="Left" Margin="0,4,0,0"
+                            Style="{StaticResource Button.Ghost}" Command="{Binding EditCustomProviderCommand}" />
                 </StackPanel>
             </Border>
 

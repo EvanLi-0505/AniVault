@@ -4,14 +4,17 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using AniVault.Models;
+using AniVault.Services;
 using AniVault.Utilities;
 
 namespace AniVault.Services.Export.Writers;
 
 /// <summary>
-/// Renders the library as a single Markdown document: a summary table, then one section per
-/// media type, split into watch-status groups so "watched" and "still to watch" are obvious.
-/// Pure function of its input — easy to unit test.
+/// Renders the library as one compact Markdown document: a small summary table, then a section
+/// per media type, split into watch-status groups, one line per title (name, broadcast time,
+/// personal rating, episode progress, marks, tags) plus optional original-title / notes lines.
+/// Pure function of its input — easy to unit test. Headings and labels are localized through
+/// <see cref="LocalizationService.Instance"/> (English when it isn't set, e.g. in tests).
 /// </summary>
 public sealed class MarkdownLibraryWriter
 {
@@ -28,14 +31,20 @@ public sealed class MarkdownLibraryWriter
     public string Write(IReadOnlyList<Media> allMedia)
     {
         var sb = new StringBuilder();
-        var generatedAt = DateTime.Now;
 
-        sb.AppendLine("# AniVault Library Export").AppendLine();
-        sb.Append("_Generated ")
-          .Append(generatedAt.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture))
-          .Append(" · ").Append(allMedia.Count).Append(" item(s) · ")
-          .Append(allMedia.Count(m => m.Status == WatchStatus.Completed)).Append(" completed_")
-          .AppendLine().AppendLine();
+        sb.Append("# ").AppendLine(L("Export.Title", "AniVault Library")).AppendLine();
+        sb.AppendLine(Format(
+            "Export.GeneratedFormat", "_Exported {0} · {1} items · {2} completed_",
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+            allMedia.Count,
+            allMedia.Count(m => m.Status == WatchStatus.Completed)))
+          .AppendLine();
+
+        if (allMedia.Count == 0)
+        {
+            sb.AppendLine(L("Export.Empty", "_Your library is empty._"));
+            return sb.ToString();
+        }
 
         WriteSummaryTable(sb, allMedia);
 
@@ -47,25 +56,31 @@ public sealed class MarkdownLibraryWriter
                 continue;
             }
 
-            sb.AppendLine().Append("## ").AppendLine(PluralLabel(type)).AppendLine();
+            sb.AppendLine()
+              .Append("## ").Append(EnumDisplay.PluralLabel(type))
+              .Append(" (").Append(itemsOfType.Count).Append(')').AppendLine().AppendLine();
 
             foreach (var status in StatusOrder)
             {
                 var group = itemsOfType
                     .Where(m => m.Status == status)
-                    .OrderBy(m => m.Title, StringComparer.CurrentCultureIgnoreCase)
+                    .OrderByDescending(m => m.MyRating ?? -1d)
+                    .ThenBy(m => m.Title, StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
                 if (group.Count == 0)
                 {
                     continue;
                 }
 
-                sb.Append("### ").Append(EnumDisplay.Label(status)).Append(" (").Append(group.Count).Append(')').AppendLine().AppendLine();
+                sb.Append("### ").Append(EnumDisplay.Label(status))
+                  .Append(" (").Append(group.Count).Append(')').AppendLine().AppendLine();
 
                 foreach (var media in group)
                 {
-                    WriteMediaEntry(sb, media);
+                    WriteMediaLine(sb, media);
                 }
+
+                sb.AppendLine();
             }
         }
 
@@ -74,14 +89,21 @@ public sealed class MarkdownLibraryWriter
 
     private static void WriteSummaryTable(StringBuilder sb, IReadOnlyList<Media> allMedia)
     {
-        sb.AppendLine("## Summary").AppendLine();
-        sb.AppendLine("| Type | Total | Completed | Watching | On hold | Planned | Dropped |");
+        sb.Append("## ").AppendLine(L("Export.SummaryHeading", "Summary")).AppendLine();
+        sb.Append("| ").Append(L("Export.ColType", "Type"))
+          .Append(" | ").Append(L("Export.ColTotal", "Total"))
+          .Append(" | ").Append(EnumDisplay.ShortLabel(WatchStatus.Completed))
+          .Append(" | ").Append(EnumDisplay.ShortLabel(WatchStatus.Watching))
+          .Append(" | ").Append(EnumDisplay.ShortLabel(WatchStatus.OnHold))
+          .Append(" | ").Append(EnumDisplay.ShortLabel(WatchStatus.Planned))
+          .Append(" | ").Append(EnumDisplay.ShortLabel(WatchStatus.Dropped))
+          .AppendLine(" |");
         sb.AppendLine("|---|---:|---:|---:|---:|---:|---:|");
 
         foreach (var type in Enum.GetValues<MediaType>())
         {
             var items = allMedia.Where(m => m.MediaType == type).ToList();
-            sb.Append("| ").Append(PluralLabel(type))
+            sb.Append("| ").Append(EnumDisplay.PluralLabel(type))
               .Append(" | ").Append(items.Count)
               .Append(" | ").Append(items.Count(m => m.Status == WatchStatus.Completed))
               .Append(" | ").Append(items.Count(m => m.Status == WatchStatus.Watching))
@@ -94,134 +116,129 @@ public sealed class MarkdownLibraryWriter
         sb.AppendLine();
     }
 
-    private static void WriteMediaEntry(StringBuilder sb, Media media)
+    private static void WriteMediaLine(StringBuilder sb, Media media)
     {
-        var heading = media.Title;
-        if (!string.IsNullOrWhiteSpace(media.OriginalTitle) &&
-            !string.Equals(media.OriginalTitle, media.Title, StringComparison.Ordinal))
+        var facts = new List<string>();
+
+        var when = FormatWhen(media);
+        if (when is not null)
         {
-            heading += $" — {media.OriginalTitle}";
+            facts.Add(when);
         }
 
-        sb.Append("#### ").AppendLine(heading).AppendLine();
-
-        AddFact(sb, "Status", EnumDisplay.Label(media.Status));
-        AddFact(sb, "My rating", media.MyRating is { } r ? $"★ {r.ToString("0.0", CultureInfo.InvariantCulture)} / 10" : null);
-
-        if (media.MediaType == MediaType.Anime)
+        if (media.MyRating is { } rating)
         {
-            AddFact(sb, "Broadcast", FormatSeason(media));
-        }
-        else if (media.AirYear is { } year)
-        {
-            AddFact(sb, "Year", year.ToString());
+            facts.Add("★" + rating.ToString("0.#", CultureInfo.InvariantCulture));
         }
 
-        AddFact(sb, "Episodes watched", FormatEpisodeProgress(media));
-        if (media.RuntimeMinutes is { } runtime and > 0)
+        var progress = FormatEpisodeProgress(media);
+        if (progress is not null)
         {
-            AddFact(sb, "Runtime", $"{runtime} min");
+            facts.Add(progress);
         }
 
-        var flags = new List<string>();
-        if (media.IsFavorite) flags.Add("Favorite");
-        if (media.IsLiked) flags.Add("Liked");
-        AddFact(sb, "Marks", flags.Count > 0 ? string.Join(" · ", flags) : null);
+        if (media.MediaType == MediaType.Movie && media.RuntimeMinutes is { } runtime and > 0)
+        {
+            facts.Add(Format("Detail.RuntimeMinFormat", "{0} min", runtime));
+        }
+
+        var marks = string.Concat(media.IsFavorite ? "❤" : string.Empty, media.IsLiked ? "👍" : string.Empty);
+        if (marks.Length > 0)
+        {
+            facts.Add(marks);
+        }
 
         var tags = media.MediaTags
             .Select(mt => mt.Tag?.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToList();
-        AddFact(sb, "Tags", tags.Count > 0 ? string.Join(", ", tags) : null);
-
-        AddFact(sb, "Dates", FormatDateRange(media));
-        AddFact(sb, "Completed on", media.CompletedAt?.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-        AddFact(sb, "Country", media.Country);
-        AddFact(sb, "Website", media.OfficialWebsite);
-
-        foreach (var external in media.ExternalIds)
+        if (tags.Count > 0)
         {
-            AddFact(sb, external.Source.ToString() + " ID", external.ExternalId);
+            facts.Add(string.Join(" / ", tags));
+        }
+
+        sb.Append("- **").Append(OneLine(media.Title)).Append("**");
+        if (facts.Count > 0)
+        {
+            sb.Append(" — ").Append(string.Join("  ·  ", facts));
         }
 
         sb.AppendLine();
 
-        if (!string.IsNullOrWhiteSpace(media.Description))
+        if (!string.IsNullOrWhiteSpace(media.OriginalTitle) &&
+            !string.Equals(media.OriginalTitle, media.Title, StringComparison.Ordinal))
         {
-            AppendBlockQuote(sb, media.Description!);
-            sb.AppendLine();
+            sb.Append("  ").AppendLine(OneLine(media.OriginalTitle!));
         }
 
         if (!string.IsNullOrWhiteSpace(media.Notes))
         {
-            sb.AppendLine("**Notes:**").AppendLine();
-            AppendBlockQuote(sb, media.Notes!);
-            sb.AppendLine();
-        }
-
-        sb.AppendLine("---").AppendLine();
-    }
-
-    private static void AddFact(StringBuilder sb, string label, string? value)
-    {
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-            sb.Append("- **").Append(label).Append(":** ").AppendLine(value.Replace("\r", string.Empty).Replace("\n", " "));
+            sb.Append("  ").Append(L("Export.NotesLabel", "Notes: ")).AppendLine(OneLine(media.Notes!));
         }
     }
 
-    private static string FormatEpisodeProgress(Media media)
+    private static string? FormatWhen(Media media)
     {
-        var watched = media.Episodes.Count(e => e.IsWatched);
-        var total = media.EpisodeCount ?? (media.Episodes.Count > 0 ? media.Episodes.Count : 0);
-
-        if (total == 0 && watched == 0)
+        if (media.MediaType == MediaType.Anime)
         {
-            return media.Status == WatchStatus.Completed ? "all" : "0";
-        }
+            if (media.AirYear is { } y)
+            {
+                return media.AirSeason is { } s ? $"{y} {EnumDisplay.Label(s)}" : y.ToString(CultureInfo.InvariantCulture);
+            }
 
-        return total > 0 ? $"{watched} / {total}" : watched.ToString();
-    }
-
-    private static string? FormatSeason(Media media)
-    {
-        if (media.AirYear is not { } year)
-        {
             return media.AirSeason is { } onlySeason ? EnumDisplay.Label(onlySeason) : null;
         }
 
-        return media.AirSeason is { } season ? $"{year} · {EnumDisplay.Label(season)}" : year.ToString();
+        if (media.AirYear is { } year)
+        {
+            return year.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return media.StartDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
-    private static string? FormatDateRange(Media media)
+    private static string? FormatEpisodeProgress(Media media)
     {
-        static string? Fmt(DateOnly? d) => d?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-        var start = Fmt(media.StartDate);
-        var end = Fmt(media.EndDate);
-
-        return (start, end) switch
+        if (media.MediaType == MediaType.Movie)
         {
-            (null, null) => null,
-            (not null, null) => start,
-            (null, not null) => $"→ {end}",
-            _ => $"{start} → {end}",
-        };
+            return null;
+        }
+
+        var watched = media.Episodes.Count(e => e.IsWatched);
+        var total = media.EpisodeCount ?? (media.Episodes.Count > 0 ? media.Episodes.Count : 0);
+
+        if (total <= 0)
+        {
+            return watched > 0 ? Format("Export.EpisodesProgressFormat", "{0}/{1} eps", watched, "?") : null;
+        }
+
+        if (media.Status == WatchStatus.Completed || watched >= total)
+        {
+            return Format("Export.EpisodesAllFormat", "{0} eps", total);
+        }
+
+        return Format("Export.EpisodesProgressFormat", "{0}/{1} eps", watched, total);
     }
 
-    private static void AppendBlockQuote(StringBuilder sb, string text)
+    private static string OneLine(string value)
+        => value.Replace("\r", string.Empty).Replace("\n", " ").Trim();
+
+    private static string L(string key, string fallback)
     {
-        foreach (var line in text.Replace("\r\n", "\n").Split('\n'))
+        var text = LocalizationService.Instance?.Text(key);
+        return string.IsNullOrEmpty(text) || text == key ? fallback : text;
+    }
+
+    private static string Format(string key, string fallbackTemplate, params object?[] args)
+    {
+        var template = L(key, fallbackTemplate);
+        try
         {
-            sb.Append("> ").AppendLine(line);
+            return string.Format(CultureInfo.CurrentCulture, template, args);
+        }
+        catch (FormatException)
+        {
+            return string.Format(CultureInfo.CurrentCulture, fallbackTemplate, args);
         }
     }
-
-    private static string PluralLabel(MediaType type) => type switch
-    {
-        MediaType.Anime => "Anime",
-        MediaType.Movie => "Movies",
-        MediaType.TvSeries => "TV Series",
-        _ => type.ToString(),
-    };
 }

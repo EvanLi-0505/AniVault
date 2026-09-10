@@ -22,6 +22,12 @@ public interface IMetadataProvider
 
     bool RequiresApiKey { get; }
 
+    /// <summary>
+    /// Whether the provider is usable right now. Almost every provider is always ready; the
+    /// user-defined <see cref="ExternalSource.Custom"/> provider is not until it has been set up.
+    /// </summary>
+    bool IsConfigured => true;
+
     bool SupportsMediaType(MediaType mediaType);
 
     Task<IReadOnlyList<MetadataSearchResult>> SearchAsync(
