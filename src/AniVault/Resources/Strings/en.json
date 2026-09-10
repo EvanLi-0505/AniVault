@@ -379,6 +379,8 @@
   "CustomProvider.SaveFailed": "Could not save the custom provider. See the log for details.",
 
   "Rating.GuideHeader": "Rating rubric (10-point)",
+  "Rating.GuideSummary": "Score Plot, Production, Characters, Music & sound and Personal immersion 0–10 each (50 total → ÷ 5). Bonus is extra credit and never changes the five facet scores.",
+  "Rating.GuideOpen": "Open the full rubric",
   "Rating.QuestionnaireTitle": "Rating questionnaire",
   "Rating.QuestionnaireButton": "📋 Questionnaire",
   "Rating.QuestionnaireTooltip": "Score each facet by the rubric; AniVault computes the final rating.",
@@ -392,5 +394,8 @@
   "Rating.BonusSequel": "Eagerly want a sequel (+0.25)",
   "Rating.Assign": "Assign rating",
   "Rating.BreakdownFormat": "Base {0} ÷ 5 = {1}   ·   Bonus +{2}",
-  "Rating.FinalFormat": "Final {0} / 10"
+  "Rating.FinalFormat": "Final {0} / 10",
+
+  "Crash.Continue": "Something went wrong, but AniVault will keep running.\nIf this keeps happening, check the log file in your data folder.",
+  "Crash.RestartPrompt": "AniVault has hit several errors in a row and may be in a bad state.\n\nRestart it now? Your library is saved and will not be affected."
 }

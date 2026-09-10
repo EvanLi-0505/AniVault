@@ -1,14 +1,21 @@
 using AniVault.Services;
+using AniVault.Utilities;
 using AniVault.ViewModels;
 
 namespace AniVault.Tests;
 
 public class RatingCalculatorViewModelTests
 {
+    private sealed class NoopRatingGuideService : IRatingGuideService
+    {
+        public int ShowCount { get; private set; }
+        public void Show() => ShowCount++;
+    }
+
     private static RatingCalculatorViewModel Create()
     {
         using var db = new TestDatabase();
-        return new RatingCalculatorViewModel(new LocalizationService(new SettingsService(db)));
+        return new RatingCalculatorViewModel(new LocalizationService(new SettingsService(db)), new NoopRatingGuideService());
     }
 
     [Fact]
@@ -57,8 +64,20 @@ public class RatingCalculatorViewModelTests
     }
 
     [Fact]
-    public void Loads_The_Rating_Guide_Text()
+    public void Open_Guide_Delegates_To_The_Service()
     {
-        Assert.Contains("剧情", Create().GuideText);
+        using var db = new TestDatabase();
+        var guide = new NoopRatingGuideService();
+        var vm = new RatingCalculatorViewModel(new LocalizationService(new SettingsService(db)), guide);
+
+        vm.OpenGuideCommand.Execute(null);
+
+        Assert.Equal(1, guide.ShowCount);
+    }
+
+    [Fact]
+    public void Rating_Guide_Resource_Loads()
+    {
+        Assert.Contains("剧情", RatingGuide.Text);
     }
 }

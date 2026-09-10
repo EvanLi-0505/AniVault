@@ -63,13 +63,21 @@
 - Every library / status / Favorites / Liked / Search / tag page paginates at **60 cards**;
   the tag filter paginates at **30**. `LibraryViewModel` keeps the full result list and only
   builds card VMs for the visible page.
-- The **My Rating** page shows the bundled 10-point rating rubric (`Resources/rating-guide.md`,
-  embedded) in a collapsible panel, rendered by `Utilities/MarkdownFlow` (a small
-  Markdown→`FlowDocument` renderer — headings, bold, bullets, tables, rules).
+- The **My Rating** page shows a one-paragraph summary of the bundled 10-point rating rubric
+  (`Resources/rating-guide.md`, embedded) with an "Open the full rubric" button →
+  `RatingGuideWindow` (a resizable, scrollable window; `IRatingGuideService`, `Utilities/MarkdownFlow`
+  renders the Markdown to a `FlowDocument`).
 - **Rating questionnaire**: a "📋 Questionnaire" button next to the rating box on the detail
-  page opens `RatingCalculatorWindow` — score five facets 0–10, tick two bonuses; final =
-  min(sum ÷ 5 + bonus, 10.0); "Assign rating" writes it back. `IRatingCalculatorService`
-  launcher, `RatingCalculatorViewModel`.
+  page opens `RatingCalculatorWindow` — pick five facet scores 0–10 (ComboBoxes), tick two
+  bonuses; final = min(sum ÷ 5 + bonus, 10.0); "Assign rating" writes it back. The window also
+  links to the full rubric. `IRatingCalculatorService` launcher, `RatingCalculatorViewModel`.
+
+### Resilience — *requested*
+- **Single instance.** `SingleInstanceGuard` (named mutex + event): a second launch signals the
+  running instance to come to the front, then exits. No more stacked processes fighting over the
+  SQLite file. (Skipped under `ANIVAULT_SMOKE`.)
+- The dispatcher exception handler now rate-limits its "kept running" dialog (once / 5 s) and,
+  after 5 unhandled UI exceptions within 2 minutes, offers a clean **restart**.
 
 ### Tags & search (Phase 6) — *requested*
 - `TagService`: create / rename / delete / delete-unused, case-insensitive de-dup, assign to media.
@@ -195,18 +203,19 @@
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 92 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 96 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, episode sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort, filter-panel choice round-trip + tag paging,
-  rating-calculator maths, tag service, season mapping + buckets,
+  rating-calculator maths, single-instance guard, tag service, season mapping + buckets,
   artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
   encrypted API keys, theme persistence).
 - Navigation smoke test: all 16 sidebar pages + a media detail page + a runtime theme swap +
   a full second page tour in Chinese + load-and-close of the editor / online-search / first-run /
-  custom-provider / rating-questionnaire windows and a themed `Calendar`, with zero exceptions,
-  zero binding errors, and **zero network requests**.
+  custom-provider / rating-questionnaire / rating-rubric windows and a themed `Calendar`, with
+  zero exceptions, zero binding errors, and **zero network requests**.
+- Manually verified: a second `AniVault.exe` launch exits in ~1 s and the first stays running.
 - Published single-file exe + installed exe: launch offline, migrate, show the dark UI.
 
 ## Not implemented yet

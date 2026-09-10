@@ -42,16 +42,23 @@
             </StackPanel>
         </Grid>
 
-        <!-- Rating guide (My Rating page only) -->
-        <Expander Grid.Row="1" Margin="0,14,0,0" Header="{loc:Loc Rating.GuideHeader}"
-                  Visibility="{Binding RatingGuideVisible, Converter={StaticResource BoolToVisibility}}">
-            <Border Style="{StaticResource Card}" Padding="16" Margin="0,8,0,0">
-                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
-                    <FlowDocumentScrollViewer x:Name="RatingGuideViewer" IsToolBarVisible="False"
-                                              Foreground="{DynamicResource Brush.TextPrimary}" Background="Transparent" />
-                </ScrollViewer>
-            </Border>
-        </Expander>
+        <!-- Rating guide (My Rating page only): short intro + a button to the full window -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="16" Margin="0,14,0,0"
+                Visibility="{Binding RatingGuideVisible, Converter={StaticResource BoolToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{loc:Loc Rating.GuideHeader}" Style="{StaticResource Text.Secondary}" FontWeight="SemiBold" />
+                    <TextBlock Text="{loc:Loc Rating.GuideSummary}" Style="{StaticResource Text.Muted}"
+                               TextWrapping="Wrap" Margin="0,6,0,0" />
+                </StackPanel>
+                <Button Grid.Column="1" Content="{loc:Loc Rating.GuideOpen}" VerticalAlignment="Center" Margin="16,0,0,0"
+                        Style="{StaticResource Button.Ghost}" Command="{Binding OpenRatingGuideCommand}" />
+            </Grid>
+        </Border>
 
         <!-- Filters -->
         <controls:FilterPanel Grid.Row="2" Margin="0,16,0,16" DataContext="{Binding Filters}" />

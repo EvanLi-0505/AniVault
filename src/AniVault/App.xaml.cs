@@ -24,6 +24,11 @@ public partial class App : Application
 {
     private ServiceProvider? _services;
     private ILogger<App>? _logger;
+    private SingleInstanceGuard? _instanceGuard;
+
+    private int _recentUiExceptions;
+    private DateTimeOffset _lastUiException;
+    private DateTimeOffset _lastCrashDialog;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -31,6 +36,23 @@ public partial class App : Application
 
         // Keep the process alive across the first-run window closing before the main window opens.
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // One process only. A second launch just brings the running window to the front.
+        // (Skipped under the smoke test so sequential CI runs don't fight over the mutex.)
+        if (Environment.GetEnvironmentVariable("ANIVAULT_SMOKE") != "1")
+        {
+            _instanceGuard = new SingleInstanceGuard("AniVault");
+            if (!_instanceGuard.IsPrimary)
+            {
+                _instanceGuard.SignalPrimaryInstance();
+                _instanceGuard.Dispose();
+                _instanceGuard = null;
+                Shutdown();
+                return;
+            }
+
+            _instanceGuard.ActivationRequested += () => Dispatcher.BeginInvoke(BringToFront);
+        }
 
         try
         {
@@ -223,6 +245,7 @@ public partial class App : Application
             DataContext = _services!.GetRequiredService<ViewModels.RatingCalculatorViewModel>(),
             Owner = shell,
         });
+        await SmokeShowWindowAsync("Rating rubric", () => new Views.RatingGuideWindow { Owner = shell });
 
         // Exercise the themed Calendar / DatePicker drop-down templates in all three display modes.
         await SmokeShowWindowAsync("Calendar", () =>
@@ -347,6 +370,7 @@ public partial class App : Application
         services.AddSingleton<IOnlineSearchService, OnlineSearchService>();
         services.AddSingleton<ICustomProviderService, CustomProviderService>();
         services.AddSingleton<IRatingCalculatorService, RatingCalculatorService>();
+        services.AddSingleton<IRatingGuideService, RatingGuideService>();
 
         // ViewModels
         services.AddSingleton<ShellViewModel>();
@@ -394,17 +418,81 @@ public partial class App : Application
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        _logger?.LogError(e.Exception, "Unhandled UI exception.");
-        MessageBox.Show(
-            "Something went wrong, but AniVault will keep running.\n"
-            + "If this keeps happening, check the log file in your data folder.",
-            "AniVault", MessageBoxButton.OK, MessageBoxImage.Warning);
         e.Handled = true;
+        _logger?.LogError(e.Exception, "Unhandled UI exception.");
+
+        var now = DateTimeOffset.UtcNow;
+        _recentUiExceptions = now - _lastUiException > TimeSpan.FromMinutes(2) ? 1 : _recentUiExceptions + 1;
+        _lastUiException = now;
+
+        // A burst of failures means the app is probably wedged — offer a clean restart.
+        if (_recentUiExceptions >= 5)
+        {
+            _recentUiExceptions = 0;
+            if (MessageBox.Show(Loc("Crash.RestartPrompt"), "AniVault",
+                    MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
+            {
+                RestartSelf();
+            }
+
+            return;
+        }
+
+        // Otherwise: a quiet "kept running" note, rate-limited so a repeating fault can't spam it.
+        if (now - _lastCrashDialog > TimeSpan.FromSeconds(5))
+        {
+            _lastCrashDialog = now;
+            MessageBox.Show(Loc("Crash.Continue"), "AniVault", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
+
+    private void RestartSelf()
+    {
+        try
+        {
+            // Release the single-instance mutex first, or the fresh process just bounces off it.
+            _instanceGuard?.Dispose();
+            _instanceGuard = null;
+
+            var exe = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exe))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Could not relaunch AniVault.");
+        }
+        finally
+        {
+            Shutdown();
+        }
+    }
+
+    private void BringToFront()
+    {
+        if (MainWindow is not { } window)
+        {
+            return;
+        }
+
+        if (window.WindowState == WindowState.Minimized)
+        {
+            window.WindowState = WindowState.Normal;
+        }
+
+        window.Activate();
+        window.Topmost = true;
+        window.Topmost = false;
+    }
+
+    private static string Loc(string key) => LocalizationService.Instance?.Text(key) ?? key;
 
     protected override void OnExit(ExitEventArgs e)
     {
         _logger?.LogInformation("AniVault exiting.");
+        _instanceGuard?.Dispose();
         _services?.Dispose();
         base.OnExit(e);
     }

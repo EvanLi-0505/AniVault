@@ -2,7 +2,6 @@ using System;
 using System.Globalization;
 using System.Linq;
 using AniVault.Services;
-using AniVault.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -16,6 +15,7 @@ namespace AniVault.ViewModels;
 public sealed partial class RatingCalculatorViewModel : ObservableObject
 {
     private readonly ILocalizationService _loc;
+    private readonly IRatingGuideService _guide;
 
     [ObservableProperty] private int _plot = 7;
     [ObservableProperty] private int _production = 7;
@@ -25,10 +25,10 @@ public sealed partial class RatingCalculatorViewModel : ObservableObject
     [ObservableProperty] private bool _willRewatch;
     [ObservableProperty] private bool _wantsSequel;
 
-    public RatingCalculatorViewModel(ILocalizationService loc)
+    public RatingCalculatorViewModel(ILocalizationService loc, IRatingGuideService guide)
     {
         _loc = loc;
-        GuideText = RatingGuide.Text;
+        _guide = guide;
     }
 
     public int[] ScoreOptions { get; } = Enumerable.Range(0, 11).ToArray();
@@ -38,8 +38,6 @@ public sealed partial class RatingCalculatorViewModel : ObservableObject
 
     /// <summary>Raised when the user cancels.</summary>
     public event Action? Cancelled;
-
-    public string GuideText { get; }
 
     public double BaseTotal => Plot + Production + Characters + Music + Immersion;
 
@@ -62,6 +60,9 @@ public sealed partial class RatingCalculatorViewModel : ObservableObject
 
     [RelayCommand]
     private void Cancel() => Cancelled?.Invoke();
+
+    [RelayCommand]
+    private void OpenGuide() => _guide.Show();
 
     partial void OnPlotChanged(int value) => Recompute();
     partial void OnProductionChanged(int value) => Recompute();

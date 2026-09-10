@@ -379,6 +379,8 @@
   "CustomProvider.SaveFailed": "无法保存自定义提供方，详见日志。",
 
   "Rating.GuideHeader": "评分标准（10 分制）",
+  "Rating.GuideSummary": "剧情、制作、角色、音乐音效、个人沉浸感，每项 0～10 分（总分 50 → 换算 ÷ 5）。Bonus 是额外加分项，不改变五项基础评分。",
+  "Rating.GuideOpen": "查看完整标准",
   "Rating.QuestionnaireTitle": "评分问卷",
   "Rating.QuestionnaireButton": "📋 评分问卷",
   "Rating.QuestionnaireTooltip": "按评分标准逐项打分，AniVault 自动算出最终评分。",
@@ -392,5 +394,8 @@
   "Rating.BonusSequel": "看完后热切期待续作（+0.25）",
   "Rating.Assign": "赋予评分",
   "Rating.BreakdownFormat": "基础总分 {0} ÷ 5 = {1}   ·   Bonus +{2}",
-  "Rating.FinalFormat": "最终评分 {0} / 10"
+  "Rating.FinalFormat": "最终评分 {0} / 10",
+
+  "Crash.Continue": "出了点问题，但 AniVault 会继续运行。\n如果反复出现，请查看数据文件夹里的日志文件。",
+  "Crash.RestartPrompt": "AniVault 连续遇到多次错误，可能已进入异常状态。\n\n现在重启吗？你的库已保存，不会受影响。"
 }

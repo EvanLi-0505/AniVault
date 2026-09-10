@@ -71,6 +71,7 @@ Phases 1–10 of the original spec are done (foundation, DB, CRUD, status/rating
 episodes, tags + combined search/filter/sort, anime seasons, artwork + thumbnails, UI polish,
 metadata providers Bangumi/AniList/Jikan/Kitsu/TMDB + one user-defined REST provider), plus
 backup/restore, compact per-title Markdown export, paginated library + tag filters, a rating
-questionnaire (`Resources/rating-guide.md` rubric → `RatingCalculatorWindow`), portable
-packaging + installer, light/dark themes, and full English / 中文 localization (runtime toggle
-in Settings → Appearance). See `docs/STATUS.md` for the authoritative list and what remains.
+questionnaire (`Resources/rating-guide.md` rubric → `RatingCalculatorWindow` / `RatingGuideWindow`),
+single-instance enforcement (`SingleInstanceGuard`), portable packaging + installer, light/dark
+themes, and full English / 中文 localization (runtime toggle in Settings → Appearance). See
+`docs/STATUS.md` for the authoritative list and what remains.

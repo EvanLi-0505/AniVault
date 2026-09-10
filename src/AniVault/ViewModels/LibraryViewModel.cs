@@ -40,6 +40,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private readonly IMediaService _mediaService;
     private readonly IMediaEditorService _editorService;
     private readonly IOnlineSearchService _onlineSearch;
+    private readonly IRatingGuideService _ratingGuide;
     private readonly ISettingsService _settings;
     private readonly IDialogService _dialogService;
     private readonly IMediaCardFactory _cards;
@@ -69,13 +70,13 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private string _pageLabel = string.Empty;
 
     [ObservableProperty] private bool _ratingGuideVisible;
-    [ObservableProperty] private string _ratingGuideText = string.Empty;
 
     public LibraryViewModel(
         IMediaQueryService queryService,
         IMediaService mediaService,
         IMediaEditorService editorService,
         IOnlineSearchService onlineSearch,
+        IRatingGuideService ratingGuide,
         ISettingsService settings,
         IDialogService dialogService,
         IMediaCardFactory cards,
@@ -89,6 +90,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _mediaService = mediaService;
         _editorService = editorService;
         _onlineSearch = onlineSearch;
+        _ratingGuide = ratingGuide;
         _settings = settings;
         _dialogService = dialogService;
         _cards = cards;
@@ -124,10 +126,6 @@ public sealed partial class LibraryViewModel : ViewModelBase
             : _loc.Text("Library.AddGeneric");
 
         RatingGuideVisible = preset.ShowRatingGuide;
-        if (preset.ShowRatingGuide && string.IsNullOrEmpty(RatingGuideText))
-        {
-            RatingGuideText = RatingGuide.Text;
-        }
 
         UpdateHeaderCount();
 
@@ -194,6 +192,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     [RelayCommand]
     private void BrowseSeasons() => _navigation.NavigateToDetail<SeasonsViewModel>();
+
+    [RelayCommand]
+    private void OpenRatingGuide() => _ratingGuide.Show();
 
     [RelayCommand(CanExecute = nameof(CanPrevPage))]
     private void PrevPage()
