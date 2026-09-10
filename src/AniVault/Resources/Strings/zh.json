@@ -84,6 +84,7 @@
   "Library.AddFormat": "+ 添加{0}",
   "Library.AddGeneric": "+ 添加",
   "Library.ItemsShownFormat": "显示 {0} 项 · {1}",
+  "Library.PageFormat": "第 {0} / {1} 页",
   "Library.BrowseSeasons": "\uD83D\uDCC5 按季度浏览",
   "Library.SearchOnline": "\uD83C\uDF10 在线搜索",
   "Library.EmptyTitle": "没有可显示的内容",
@@ -114,6 +115,7 @@
   "Filter.Reset": "重置筛选",
   "Filter.Tags": "标签",
   "Filter.MatchAll": "匹配所有选中项",
+  "Filter.PageFormat": "{0} / {1}",
 
   "Card.NoPoster": "无海报",
   "Card.NotRated": "未评分",
@@ -374,5 +376,21 @@
   "CustomProvider.DeleteTitle": "移除自定义提供方",
   "CustomProvider.DeleteConfirm": "移除自定义提供方的配置及其保存的 API Key 吗？",
   "CustomProvider.Invalid": "请至少填写名称，以及包含 {query} 的搜索地址。",
-  "CustomProvider.SaveFailed": "无法保存自定义提供方，详见日志。"
+  "CustomProvider.SaveFailed": "无法保存自定义提供方，详见日志。",
+
+  "Rating.GuideHeader": "评分标准（10 分制）",
+  "Rating.QuestionnaireTitle": "评分问卷",
+  "Rating.QuestionnaireButton": "📋 评分问卷",
+  "Rating.QuestionnaireTooltip": "按评分标准逐项打分，AniVault 自动算出最终评分。",
+  "Rating.QuestionnaireIntro": "为五个维度各打 0–10 分。最终评分 = 五项总分 ÷ 5，再加最多 +0.5 的 Bonus（上限 10.0）。",
+  "Rating.Plot": "剧情",
+  "Rating.Production": "制作",
+  "Rating.Characters": "角色",
+  "Rating.Music": "音乐音效",
+  "Rating.Immersion": "个人沉浸感",
+  "Rating.BonusRewatch": "看完后愿意二周目（+0.25）",
+  "Rating.BonusSequel": "看完后热切期待续作（+0.25）",
+  "Rating.Assign": "赋予评分",
+  "Rating.BreakdownFormat": "基础总分 {0} ÷ 5 = {1}   ·   Bonus +{2}",
+  "Rating.FinalFormat": "最终评分 {0} / 10"
 }

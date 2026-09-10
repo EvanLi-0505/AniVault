@@ -89,7 +89,12 @@
 
                         <StackPanel Margin="0,0,20,10">
                             <TextBlock Text="{loc:Loc Detail.MyRating}" Style="{StaticResource Text.Muted}" Margin="0,0,0,4" />
-                            <TextBox Width="90" Text="{Binding MyRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox Width="90" Text="{Binding MyRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
+                                <Button Content="{loc:Loc Rating.QuestionnaireButton}" Margin="8,0,0,0" Padding="10,0"
+                                        Style="{StaticResource Button.Ghost}" Command="{Binding OpenRatingCalculatorCommand}"
+                                        ToolTip="{loc:Loc Rating.QuestionnaireTooltip}" />
+                            </StackPanel>
                         </StackPanel>
 
                         <StackPanel Margin="0,0,0,10" VerticalAlignment="Bottom" Orientation="Horizontal">

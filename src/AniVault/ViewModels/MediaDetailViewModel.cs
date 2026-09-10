@@ -31,6 +31,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
     private readonly Metadata.IMetadataService _metadata;
     private readonly Metadata.IMetadataImporter _metadataImporter;
     private readonly ISettingsService _settings;
+    private readonly IRatingCalculatorService _ratingCalculator;
     private readonly ILocalizationService _loc;
     private readonly ILogger<MediaDetailViewModel> _logger;
 
@@ -72,6 +73,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         Metadata.IMetadataService metadata,
         Metadata.IMetadataImporter metadataImporter,
         ISettingsService settings,
+        IRatingCalculatorService ratingCalculator,
         ILocalizationService loc,
         ILogger<MediaDetailViewModel> logger)
     {
@@ -84,6 +86,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         _metadata = metadata;
         _metadataImporter = metadataImporter;
         _settings = settings;
+        _ratingCalculator = ratingCalculator;
         _logger = logger;
     }
 
@@ -215,6 +218,21 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         }
 
         _ = RunAsync(() => _mediaService.SetRatingAsync(_media.Id, value));
+    }
+
+    [RelayCommand]
+    private async Task OpenRatingCalculator()
+    {
+        if (_media is null)
+        {
+            return;
+        }
+
+        var score = await _ratingCalculator.RunAsync();
+        if (score is { } value)
+        {
+            MyRating = value;
+        }
     }
 
     [RelayCommand]

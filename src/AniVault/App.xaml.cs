@@ -218,6 +218,11 @@ public partial class App : Application
             _ = vm.LoadAsync();
             return new Views.CustomProviderWindow { DataContext = vm, Owner = shell };
         });
+        await SmokeShowWindowAsync("Rating questionnaire", () => new Views.RatingCalculatorWindow
+        {
+            DataContext = _services!.GetRequiredService<ViewModels.RatingCalculatorViewModel>(),
+            Owner = shell,
+        });
 
         // Exercise the themed Calendar / DatePicker drop-down templates in all three display modes.
         await SmokeShowWindowAsync("Calendar", () =>
@@ -341,6 +346,7 @@ public partial class App : Application
         services.AddSingleton<Metadata.IMetadataImporter, Metadata.MetadataImporter>();
         services.AddSingleton<IOnlineSearchService, OnlineSearchService>();
         services.AddSingleton<ICustomProviderService, CustomProviderService>();
+        services.AddSingleton<IRatingCalculatorService, RatingCalculatorService>();
 
         // ViewModels
         services.AddSingleton<ShellViewModel>();
@@ -354,6 +360,7 @@ public partial class App : Application
         services.AddTransient<BackupExportViewModel>();
         services.AddTransient<MetadataSettingsViewModel>();
         services.AddTransient<CustomProviderViewModel>();
+        services.AddTransient<RatingCalculatorViewModel>();
         services.AddTransient<OnlineSearchViewModel>();
         services.AddTransient<PlaceholderViewModel>();
         services.AddTransient<MediaEditorViewModel>();

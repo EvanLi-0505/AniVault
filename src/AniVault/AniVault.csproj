@@ -17,8 +17,8 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 
     <!-- Product / version metadata (shown in the EXE properties and About text) -->
-    <Version>0.7.2</Version>
-    <InformationalVersion>0.7.2</InformationalVersion>
+    <Version>0.7.3</Version>
+    <InformationalVersion>0.7.3</InformationalVersion>
     <Product>AniVault</Product>
     <Company>AniVault</Company>
     <Authors>AniVault</Authors>
@@ -54,6 +54,7 @@
     <!-- UI-string tables, read at runtime by LocalizationService via GetManifestResourceStream. -->
     <EmbeddedResource Include="Resources/Strings/en.json" />
     <EmbeddedResource Include="Resources/Strings/zh.json" />
+    <EmbeddedResource Include="Resources/rating-guide.md" />
   </ItemGroup>
 
 </Project>

@@ -14,7 +14,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -40,11 +42,22 @@
             </StackPanel>
         </Grid>
 
+        <!-- Rating guide (My Rating page only) -->
+        <Expander Grid.Row="1" Margin="0,14,0,0" Header="{loc:Loc Rating.GuideHeader}"
+                  Visibility="{Binding RatingGuideVisible, Converter={StaticResource BoolToVisibility}}">
+            <Border Style="{StaticResource Card}" Padding="16" Margin="0,8,0,0">
+                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                    <FlowDocumentScrollViewer x:Name="RatingGuideViewer" IsToolBarVisible="False"
+                                              Foreground="{DynamicResource Brush.TextPrimary}" Background="Transparent" />
+                </ScrollViewer>
+            </Border>
+        </Expander>
+
         <!-- Filters -->
-        <controls:FilterPanel Grid.Row="1" Margin="0,16,0,16" DataContext="{Binding Filters}" />
+        <controls:FilterPanel Grid.Row="2" Margin="0,16,0,16" DataContext="{Binding Filters}" />
 
         <!-- Content -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <controls:EmptyState Title="{loc:Loc Library.EmptyTitle}"
                                  Message="{Binding EmptyStateText}"
                                  ActionText="{Binding AddButtonText}"
@@ -70,5 +83,13 @@
                 </ItemsControl>
             </ScrollViewer>
         </Grid>
+
+        <!-- Pager -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0"
+                    Visibility="{Binding PagingVisible, Converter={StaticResource BoolToVisibility}}">
+            <Button Content="‹" Style="{StaticResource Button.Ghost}" Padding="14,4" MinWidth="0" Command="{Binding PrevPageCommand}" />
+            <TextBlock Text="{Binding PageLabel}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" Margin="14,0" />
+            <Button Content="›" Style="{StaticResource Button.Ghost}" Padding="14,4" MinWidth="0" Command="{Binding NextPageCommand}" />
+        </StackPanel>
     </Grid>
 </UserControl>

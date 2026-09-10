@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AniVault.Models;
@@ -25,7 +27,8 @@ public sealed record LibraryPreset(
     bool LikedOnly = false,
     int? TagId = null,
     MediaSortField SortField = MediaSortField.UpdatedDate,
-    bool SortDescending = true);
+    bool SortDescending = true,
+    bool ShowRatingGuide = false);
 
 /// <summary>
 /// A browsable list of media with the shared filter + sort panel. Configured by a
@@ -45,8 +48,11 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private readonly ILocalizationService _loc;
     private readonly ILogger<LibraryViewModel> _logger;
 
+    private const int PageSize = 60;
+
     private LibraryPreset _preset = new("Library", string.Empty);
     private CancellationTokenSource? _reloadCts;
+    private List<Media> _pageSource = new();
 
     [ObservableProperty] private string _title = "Library";
     [ObservableProperty] private string _subtitle = string.Empty;
@@ -56,6 +62,14 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private bool _showSeasonBrowser;
     [ObservableProperty] private bool _onlineSearchEnabled;
     [ObservableProperty] private string _addButtonText = "+ Add media";
+
+    [ObservableProperty] private int _currentPage = 1;
+    [ObservableProperty] private int _totalPages = 1;
+    [ObservableProperty] private bool _pagingVisible;
+    [ObservableProperty] private string _pageLabel = string.Empty;
+
+    [ObservableProperty] private bool _ratingGuideVisible;
+    [ObservableProperty] private string _ratingGuideText = string.Empty;
 
     public LibraryViewModel(
         IMediaQueryService queryService,
@@ -85,7 +99,6 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _logger = logger;
 
         Filters.Changed += (_, _) => ScheduleReload();
-        Items.CollectionChanged += (_, _) => UpdateHeaderCount();
     }
 
     public FilterPanelViewModel Filters { get; }
@@ -109,6 +122,13 @@ public sealed partial class LibraryViewModel : ViewModelBase
         AddButtonText = preset.MediaType is { } type
             ? _loc.Format("Library.AddFormat", EnumDisplay.Label(type))
             : _loc.Text("Library.AddGeneric");
+
+        RatingGuideVisible = preset.ShowRatingGuide;
+        if (preset.ShowRatingGuide && string.IsNullOrEmpty(RatingGuideText))
+        {
+            RatingGuideText = RatingGuide.Text;
+        }
+
         UpdateHeaderCount();
 
         Filters.BeginUpdate();
@@ -133,7 +153,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             MediaType: mediaType));
 
     private void UpdateHeaderCount()
-        => HeaderCountText = _loc.Format("Library.ItemsShownFormat", Items.Count, Subtitle);
+        => HeaderCountText = _loc.Format("Library.ItemsShownFormat", _pageSource.Count, Subtitle);
 
     public override async Task LoadAsync()
     {
@@ -174,6 +194,24 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     [RelayCommand]
     private void BrowseSeasons() => _navigation.NavigateToDetail<SeasonsViewModel>();
+
+    [RelayCommand(CanExecute = nameof(CanPrevPage))]
+    private void PrevPage()
+    {
+        CurrentPage--;
+        ApplyPage();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanNextPage))]
+    private void NextPage()
+    {
+        CurrentPage++;
+        ApplyPage();
+    }
+
+    private bool CanPrevPage() => CurrentPage > 1;
+
+    private bool CanNextPage() => CurrentPage < TotalPages;
 
     [RelayCommand]
     private async Task SearchOnline()
@@ -269,13 +307,9 @@ public sealed partial class LibraryViewModel : ViewModelBase
                 return;
             }
 
-            Items.Clear();
-            foreach (var media in results)
-            {
-                Items.Add(_cards.Create(media));
-            }
-
-            IsEmpty = Items.Count == 0;
+            _pageSource = results.ToList();
+            CurrentPage = 1;
+            ApplyPage();
             OnPropertyChanged(nameof(EmptyStateText));
         }
         catch (OperationCanceledException)
@@ -290,5 +324,24 @@ public sealed partial class LibraryViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private void ApplyPage()
+    {
+        TotalPages = Math.Max(1, (int)Math.Ceiling(_pageSource.Count / (double)PageSize));
+        CurrentPage = Math.Clamp(CurrentPage, 1, TotalPages);
+        PagingVisible = TotalPages > 1;
+        PageLabel = _loc.Format("Library.PageFormat", CurrentPage, TotalPages);
+
+        Items.Clear();
+        foreach (var media in _pageSource.Skip((CurrentPage - 1) * PageSize).Take(PageSize))
+        {
+            Items.Add(_cards.Create(media));
+        }
+
+        IsEmpty = _pageSource.Count == 0;
+        UpdateHeaderCount();
+        PrevPageCommand.NotifyCanExecuteChanged();
+        NextPageCommand.NotifyCanExecuteChanged();
     }
 }

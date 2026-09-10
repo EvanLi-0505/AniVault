@@ -84,6 +84,7 @@
   "Library.AddFormat": "+ Add {0}",
   "Library.AddGeneric": "+ Add media",
   "Library.ItemsShownFormat": "{0} shown · {1}",
+  "Library.PageFormat": "Page {0} / {1}",
   "Library.BrowseSeasons": "\uD83D\uDCC5 Browse by season",
   "Library.SearchOnline": "\uD83C\uDF10 Search online",
   "Library.EmptyTitle": "Nothing to show",
@@ -114,6 +115,7 @@
   "Filter.Reset": "Reset filters",
   "Filter.Tags": "Tags",
   "Filter.MatchAll": "Match all selected",
+  "Filter.PageFormat": "{0} / {1}",
 
   "Card.NoPoster": "No poster",
   "Card.NotRated": "Not rated",
@@ -374,5 +376,21 @@
   "CustomProvider.DeleteTitle": "Remove custom provider",
   "CustomProvider.DeleteConfirm": "Remove the custom provider configuration and its saved API key?",
   "CustomProvider.Invalid": "Enter at least a name and a search URL that contains {query}.",
-  "CustomProvider.SaveFailed": "Could not save the custom provider. See the log for details."
+  "CustomProvider.SaveFailed": "Could not save the custom provider. See the log for details.",
+
+  "Rating.GuideHeader": "Rating rubric (10-point)",
+  "Rating.QuestionnaireTitle": "Rating questionnaire",
+  "Rating.QuestionnaireButton": "📋 Questionnaire",
+  "Rating.QuestionnaireTooltip": "Score each facet by the rubric; AniVault computes the final rating.",
+  "Rating.QuestionnaireIntro": "Score five facets 0–10. Final = total ÷ 5, plus up to +0.5 of bonuses, capped at 10.0.",
+  "Rating.Plot": "Plot",
+  "Rating.Production": "Production",
+  "Rating.Characters": "Characters",
+  "Rating.Music": "Music & sound",
+  "Rating.Immersion": "Personal immersion",
+  "Rating.BonusRewatch": "Would rewatch after finishing (+0.25)",
+  "Rating.BonusSequel": "Eagerly want a sequel (+0.25)",
+  "Rating.Assign": "Assign rating",
+  "Rating.BreakdownFormat": "Base {0} ÷ 5 = {1}   ·   Bonus +{2}",
+  "Rating.FinalFormat": "Final {0} / 10"
 }

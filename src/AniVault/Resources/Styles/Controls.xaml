@@ -12,7 +12,6 @@
     <conv:PositiveNumberToVisibilityConverter x:Key="PositiveToVisible" />
     <conv:SortDirectionGlyphConverter x:Key="SortDirectionGlyph" />
     <conv:ApiKeyStatusConverter x:Key="ApiKeyStatus" />
-    <conv:YearOrAnyConverter x:Key="YearOrAny" />
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
     <!-- Typography -->

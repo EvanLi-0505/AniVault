@@ -9,16 +9,6 @@ using AniVault.Services;
 
 namespace AniVault.Utilities;
 
-/// <summary>Shows a year, or the localized "Any" for the null option.</summary>
-public sealed class YearOrAnyConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value?.ToString() ?? LocalizationService.Instance?.Text("Common.Any") ?? "Any";
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => throw new NotSupportedException();
-}
-
 /// <summary>Converts a domain enum to its display label.</summary>
 public sealed class EnumLabelConverter : IValueConverter
 {

@@ -56,6 +56,21 @@
 - `.github/workflows/ci.yml` (build+test) and `release.yml` (tag `v*` → build + attach to Release).
 - Verified: portable exe and installed exe both launch offline, migrate, show UI; install→run→uninstall cycle clean.
 
+### Library browsing polish — *requested*
+- The filter dropdowns (Status / Year / Season) now use `FilterChoice<T>` wrapper items instead
+  of a bare `null` entry, so the "All" / "(none)" option can be re-selected (a WPF `Selector`
+  cannot re-select a null item once a real value was chosen — you were stuck until "Reset").
+- Every library / status / Favorites / Liked / Search / tag page paginates at **60 cards**;
+  the tag filter paginates at **30**. `LibraryViewModel` keeps the full result list and only
+  builds card VMs for the visible page.
+- The **My Rating** page shows the bundled 10-point rating rubric (`Resources/rating-guide.md`,
+  embedded) in a collapsible panel, rendered by `Utilities/MarkdownFlow` (a small
+  Markdown→`FlowDocument` renderer — headings, bold, bullets, tables, rules).
+- **Rating questionnaire**: a "📋 Questionnaire" button next to the rating box on the detail
+  page opens `RatingCalculatorWindow` — score five facets 0–10, tick two bonuses; final =
+  min(sum ÷ 5 + bonus, 10.0); "Assign rating" writes it back. `IRatingCalculatorService`
+  launcher, `RatingCalculatorViewModel`.
+
 ### Tags & search (Phase 6) — *requested*
 - `TagService`: create / rename / delete / delete-unused, case-insensitive de-dup, assign to media.
 - Tag editor component (`TagPickerViewModel`) in the media editor; clickable tag chips on the detail page.
@@ -180,17 +195,18 @@
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 84 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 92 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, episode sync/watched/rating clamp/completed-stamp, backup round-trip,
-  Markdown export, combined query filters + sort, tag service, season mapping + buckets,
+  Markdown export, combined query filters + sort, filter-panel choice round-trip + tag paging,
+  rating-calculator maths, tag service, season mapping + buckets,
   artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
   encrypted API keys, theme persistence).
 - Navigation smoke test: all 16 sidebar pages + a media detail page + a runtime theme swap +
   a full second page tour in Chinese + load-and-close of the editor / online-search / first-run /
-  custom-provider windows and a themed `Calendar`, with zero exceptions, zero binding errors,
-  and **zero network requests**.
+  custom-provider / rating-questionnaire windows and a themed `Calendar`, with zero exceptions,
+  zero binding errors, and **zero network requests**.
 - Published single-file exe + installed exe: launch offline, migrate, show the dark UI.
 
 ## Not implemented yet

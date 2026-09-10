@@ -107,7 +107,7 @@ public sealed partial class ShellViewModel : ObservableObject
                 new LibraryPreset(L("Library.Preset.Liked"), L("Library.Preset.LikedSub"), LikedOnly: true)))),
             NavItem.Page("MyRating", L("Nav.MyRating"), "⭐", nav => nav.NavigateTo<LibraryViewModel>(vm => vm.Configure(
                 new LibraryPreset(L("Library.Preset.MyRating"), L("Library.Preset.MyRatingSub"),
-                    SortField: MediaSortField.MyRating, SortDescending: true)))),
+                    SortField: MediaSortField.MyRating, SortDescending: true, ShowRatingGuide: true)))),
             NavItem.Page("Tags", L("Nav.Tags"), "\U0001F3F7", nav => nav.NavigateTo<TagsViewModel>()),
 
             NavItem.Header(L("Nav.Section.Browse")),
