@@ -141,7 +141,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
         Filters.ShowFavorite = !preset.FavoriteOnly;
         Filters.ShowLiked = !preset.LikedOnly;
         Filters.ShowSeason = preset.MediaType is null or MediaType.Anime;
-        Filters.EndUpdate();
+        // LoadAsync() (called immediately after Configure by the navigation framework) does its
+        // own explicit reload right away — EndUpdate()'s "fire Changed" would just schedule a
+        // second, fully redundant reload ~200ms later via the debounced handler below.
+        Filters.EndUpdateSilently();
     }
 
     /// <summary>Shorthand for the three library pages.</summary>
@@ -173,7 +176,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
                 option.IsSelected = option.Id == tagId;
             }
 
-            Filters.EndUpdate();
+            // Same reasoning as Configure(): ReloadAsync() a few lines below already reloads
+            // explicitly with this tag pre-selected, so firing Changed here would only schedule a
+            // second, redundant reload.
+            Filters.EndUpdateSilently();
         }
 
         await ReloadAsync(CancellationToken.None);

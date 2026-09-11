@@ -133,6 +133,15 @@ public sealed partial class FilterPanelViewModel : ObservableObject
         RaiseChanged();
     }
 
+    /// <summary>
+    /// Resumes notifications WITHOUT firing <see cref="Changed"/>. For a caller (like
+    /// <c>LibraryViewModel.Configure</c>) that is about to do its own explicit, immediate reload
+    /// right after — firing <see cref="Changed"/> here would only schedule a second, fully
+    /// redundant reload ~200ms later (the debounce delay), which on a library page with many
+    /// cards means paying the WPF layout/render cost for that page twice on every navigation.
+    /// </summary>
+    public void EndUpdateSilently() => _suspend = false;
+
     public ObservableCollection<FilterChoice<WatchStatus>> StatusOptions { get; }
 
     public ObservableCollection<FilterChoice<AnimeSeason>> SeasonOptions { get; }

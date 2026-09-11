@@ -107,6 +107,29 @@ public class FilterPanelViewModelTests
     }
 
     [Fact]
+    public async Task EndUpdate_Fires_Changed_But_EndUpdateSilently_Does_Not()
+    {
+        using var db = new TestDatabase();
+        var vm = Create(db);
+        await vm.LoadOptionsAsync(null);
+
+        var changes = 0;
+        vm.Changed += (_, _) => changes++;
+
+        vm.BeginUpdate();
+        vm.Status = WatchStatus.Watching;
+        vm.EndUpdateSilently();
+        Assert.Equal(0, changes);
+        Assert.Equal(WatchStatus.Watching, vm.Status);
+
+        vm.BeginUpdate();
+        vm.Status = WatchStatus.Completed;
+        vm.EndUpdate();
+        Assert.Equal(1, changes);
+        Assert.Equal(WatchStatus.Completed, vm.Status);
+    }
+
+    [Fact]
     public async Task Tags_Paginate_When_There_Are_Many()
     {
         using var db = new TestDatabase();

@@ -277,24 +277,29 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
   *from the current type*, so those files would silently become impossible to clean up on delete.
   `IArtworkService.RelocateArtworkAsync` now moves the asset folder and rewrites the stored paths;
   `MediaEditorViewModel.Save()` calls it whenever an existing item's category actually changes.
-- **"Entering 番剧 pauses but 电影/剧集 don't" — still under investigation**: round 1 found and
-  ruled out the cold-cache thumbnail-regeneration bursts as the *sole* cause (real, but only a
-  one-time cost right after a backup restore — see the log evidence, still valid). The user then
-  reported the pause persists even on a warm cache, which the `ApplyPage()` "Built N card(s)"
-  timing (1–9ms) can't explain either — that number only covers creating the card view models and
-  enqueuing them into the `ObservableCollection`; WPF's actual Measure/Arrange/Render pass for the
-  (non-virtualized) `WrapPanel` runs later, asynchronously, on the dispatcher, so it was never
-  actually measured. Added a second log line to close that gap: a continuation scheduled at
-  `DispatcherPriority.Render` right after the cards are enqueued, logging "Rendered N card(s)...
-  (containers + layout + render)" once WPF's layout pass has actually caught up — this is the
-  number that should reflect what the user perceives. Also timed `FilterPanelViewModel`'s tag-list
-  reload (`Filters.LoadOptionsAsync`, which reloads every tag on every library navigation
-  regardless of type — a previously uninstrumented, category-agnostic candidate). Waiting on the
-  user's next `app.log` to see which of these two numbers actually correlates with the reported
-  lag before deciding on a fix (a smaller page size is the safe, low-risk mitigation if render
-  time turns out to be the real cost; a hand-written virtualizing wrap panel — WPF has none built
-  in — would be the fuller fix but is enough surface area, and impossible to verify visually from
-  here, that it shouldn't be attempted on a guess).
+- **"Entering 番剧 pauses but 电影/剧集 don't" — root cause found, redundant reload fixed**: the
+  new render-complete log (`DispatcherPriority.Render` continuation, added while chasing this)
+  gave the real numbers: `Rendered 47 card(s) for '番剧库'` consistently cost **150–270ms**
+  against `~20–45ms` for a 5-card Movies/TV page — proportional to card count, confirming the
+  non-virtualized `WrapPanel`'s layout/render pass genuinely is the cost, not something the
+  earlier "Built N card(s)" (container-creation-only) number could see. The log also showed
+  **every single library navigation rendering the page twice** — `Built`/`Rendered` appearing in
+  pairs a consistent ~200–275ms apart. Root cause: `LibraryViewModel.Configure()` (and the
+  tag-preset branch in `LoadAsync()`) called `Filters.EndUpdate()`, which unconditionally fires
+  `FilterPanelViewModel.Changed` → `LibraryViewModel`'s subscription schedules a **debounced
+  200ms** reload — but `LoadAsync()` (always called immediately after `Configure()` by
+  `NavigationService.Resolve`/`SetCurrent`, confirmed for every navigation path including
+  `GoBack`) already does its own full, immediate reload right after, making the debounced one
+  entirely redundant — so every navigation paid the ~150–270ms render cost **twice**, roughly
+  doubling the reported pause. Fixed by adding `FilterPanelViewModel.EndUpdateSilently()` (resumes
+  updates without firing `Changed`, for a caller — both sites in `LibraryViewModel` qualify — that
+  is about to reload explicitly right after anyway) and switching both call sites to it. Verified
+  in the smoke-test log: each library page now shows exactly one
+  `Loaded filter options` → `Built` → `Rendered` triple instead of two. A single ~150–270ms
+  render for 47 cards is real and still not virtualization-fast, but this removes a genuine,
+  100%-avoidable doubling of it. A page-size reduction or a virtualizing panel (WPF ships neither
+  built in; a hand-written one can't be verified visually from here) remain the options if the
+  single-render cost is still noticeable — waiting on the user's next test before going further.
 
 ### Anime seasons (Phase 7) — *done*
 - `SeasonsViewModel` + `SeasonsView`: left year list, four season tabs with per-year counts,
@@ -335,12 +340,12 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 128 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 129 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, editor category override + save + Anime-field clearing on switch +
   artwork relocation on category switch, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
-  round-trip + month free-text parsing + tag paging, rating-calculator maths, single-instance
+  round-trip + month free-text parsing + tag paging + silent-vs-firing bulk update, rating-calculator maths, single-instance
   guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +
   drag-reorder across pages, season mapping + buckets,
   artwork import always keeps original resolution + oversized-artwork scan/selective-compress +
