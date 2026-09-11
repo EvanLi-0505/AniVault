@@ -263,6 +263,49 @@ public class ArtworkServiceTests
     }
 
     [Fact]
+    public async Task RelocateArtwork_Moves_Files_And_Updates_Stored_Paths()
+    {
+        using var lib = new TestLibrary();
+        var service = new ArtworkService(lib, lib.Paths, NullLogger<ArtworkService>.Instance);
+
+        int id;
+        await using (var db = lib.CreateDbContext())
+        {
+            var media = new Media { MediaType = MediaType.TvSeries, Title = "Misfiled Movie" };
+            db.Media.Add(media);
+            await db.SaveChangesAsync();
+            id = media.Id;
+        }
+
+        var source = WriteTempImage(".png");
+        try
+        {
+            await service.SetPosterAsync(id, source);
+            await service.SetBackdropAsync(id, source);
+        }
+        finally
+        {
+            File.Delete(source);
+        }
+
+        var oldAssetDir = lib.Paths.GetMediaAssetDirectory(MediaType.TvSeries, id);
+        Assert.True(Directory.Exists(oldAssetDir));
+
+        await service.RelocateArtworkAsync(id, MediaType.TvSeries, MediaType.Movie);
+
+        Assert.False(Directory.Exists(oldAssetDir));
+        var newAssetDir = lib.Paths.GetMediaAssetDirectory(MediaType.Movie, id);
+        Assert.True(Directory.Exists(newAssetDir));
+
+        await using var readDb = lib.CreateDbContext();
+        var saved = await readDb.Media.SingleAsync(m => m.Id == id);
+        Assert.Equal($"Movies/{id}/poster.png", saved.PosterPath);
+        Assert.Equal($"Movies/{id}/backdrop.png", saved.BackdropPath);
+        Assert.True(File.Exists(lib.Paths.ToAbsolutePath(saved.PosterPath!)));
+        Assert.True(File.Exists(lib.Paths.ToAbsolutePath(saved.BackdropPath!)));
+    }
+
+    [Fact]
     public async Task CompressExistingArtwork_Does_Nothing_When_Everything_Is_Already_Small()
     {
         using var lib = new TestLibrary();

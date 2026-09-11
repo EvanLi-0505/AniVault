@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AniVault.Data;
@@ -49,6 +51,17 @@ public interface IArtworkService
     /// detail pages.
     /// </summary>
     Task<ArtworkCompressionResult> CompressExistingArtworkAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Moves an item's artwork folder from <paramref name="oldType"/>'s asset directory to
+    /// <paramref name="newType"/>'s and updates its stored poster/backdrop paths to match.
+    /// Called after the editor's manual category override changes an existing item's
+    /// <see cref="Media.MediaType"/> — without this, the files stay findable (the app reads the
+    /// exact stored path, not one derived from the current type) but end up orphaned on delete,
+    /// since <see cref="DeleteAllArtworkAsync"/> looks for the folder the *current* type implies.
+    /// No-op if the item has no artwork or the two types share a folder.
+    /// </summary>
+    Task RelocateArtworkAsync(int mediaId, MediaType oldType, MediaType newType, CancellationToken cancellationToken = default);
 }
 
 public sealed class ArtworkService : IArtworkService
@@ -148,7 +161,14 @@ public sealed class ArtworkService : IArtworkService
             return thumb;
         }
 
-        return await ImageLoading.SaveThumbnailAsync(poster, thumb, ThumbnailWidth) ? thumb : poster;
+        var sw = Stopwatch.StartNew();
+        var built = await ImageLoading.SaveThumbnailAsync(poster, thumb, ThumbnailWidth);
+        sw.Stop();
+        _logger.LogInformation(
+            "Regenerated thumbnail for media {MediaId} (cache was missing/stale) in {ElapsedMs} ms.",
+            media.Id, sw.ElapsedMilliseconds);
+
+        return built ? thumb : poster;
     }
 
     public string? GetPosterPath(Media media) => ResolveExisting(media.PosterPath);
@@ -205,6 +225,52 @@ public sealed class ArtworkService : IArtworkService
         }
 
         media.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task RelocateArtworkAsync(int mediaId, MediaType oldType, MediaType newType, CancellationToken cancellationToken = default)
+    {
+        if (oldType == newType)
+        {
+            return;
+        }
+
+        var oldDir = _paths.GetMediaAssetDirectory(oldType, mediaId);
+        var newDir = _paths.GetMediaAssetDirectory(newType, mediaId);
+        if (string.Equals(oldDir, newDir, StringComparison.OrdinalIgnoreCase) || !Directory.Exists(oldDir))
+        {
+            return;
+        }
+
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var media = await db.Media.FirstOrDefaultAsync(m => m.Id == mediaId, cancellationToken);
+        if (media is null)
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(newDir)!);
+        if (Directory.Exists(newDir))
+        {
+            // Ids are globally unique across every type, so this shouldn't normally happen —
+            // fall back to copy+delete instead of letting Directory.Move throw on a stale folder.
+            foreach (var file in Directory.EnumerateFiles(oldDir))
+            {
+                File.Copy(file, Path.Combine(newDir, Path.GetFileName(file)), overwrite: true);
+            }
+
+            Directory.Delete(oldDir, recursive: true);
+        }
+        else
+        {
+            Directory.Move(oldDir, newDir);
+        }
+
+        var poster = Directory.EnumerateFiles(newDir, "poster.*").FirstOrDefault();
+        var backdrop = Directory.EnumerateFiles(newDir, "backdrop.*").FirstOrDefault();
+
+        media.PosterPath = poster is null ? null : _paths.ToRelativePath(poster);
+        media.BackdropPath = backdrop is null ? null : _paths.ToRelativePath(backdrop);
         await db.SaveChangesAsync(cancellationToken);
     }
 

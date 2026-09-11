@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -334,11 +335,16 @@ public sealed partial class LibraryViewModel : ViewModelBase
         PagingVisible = TotalPages > 1;
         PageLabel = _loc.Format("Library.PageFormat", CurrentPage, TotalPages);
 
+        var sw = Stopwatch.StartNew();
         Items.Clear();
         foreach (var media in _pageSource.Skip((CurrentPage - 1) * PageSize).Take(PageSize))
         {
             Items.Add(_cards.Create(media));
         }
+
+        sw.Stop();
+        _logger.LogInformation(
+            "Built {Count} card(s) for '{Title}' in {ElapsedMs} ms.", Items.Count, Title, sw.ElapsedMilliseconds);
 
         IsEmpty = _pageSource.Count == 0;
         UpdateHeaderCount();

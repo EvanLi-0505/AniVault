@@ -254,6 +254,9 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
                 ? new Media()
                 : await _mediaService.GetByIdAsync(_editingId.Value) ?? new Media();
 
+            var previousType = media.MediaType;
+            var categoryChanged = _editingId is not null && previousType != MediaType;
+
             media.MediaType = MediaType;
             media.Title = TitleText.Trim();
             media.OriginalTitle = Trimmed(OriginalTitle);
@@ -285,6 +288,11 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
             else
             {
                 await _mediaService.UpdateAsync(media);
+            }
+
+            if (categoryChanged)
+            {
+                await _artwork.RelocateArtworkAsync(media.Id, previousType, MediaType);
             }
 
             await _tagService.SetMediaTagsAsync(media.Id, Tags.GetTags());

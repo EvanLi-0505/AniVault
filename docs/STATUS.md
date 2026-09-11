@@ -268,7 +268,24 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
   (`IArtworkService.CompressExistingArtworkAsync`) is a one-time, explicit, opt-in maintenance
   pass that re-encodes any already-stored poster/backdrop over the cap in place (only replaces a
   file if the result actually comes out smaller; reports a "compressed N file(s), saved X" summary,
-  or "nothing needed compressing"), for artwork imported before this fix existed.
+  or "nothing needed compressing"), for artwork imported before this fix existed. Verified against
+  the user's real data: compressed 31 files, saved ~5.8 MB.
+- **Category-switch artwork relocation** — *fixed*: a side effect found while investigating the
+  above — the editor's category override (Milestone: editor category field) changed
+  `Media.MediaType` but left the poster/backdrop files sitting in the *old* type's asset folder
+  (e.g. `TV/52/poster.jpg` for an item now typed `Movie`). Reads still worked (the stored path is
+  used directly, not re-derived from the type), but `DeleteAllArtworkAsync` computes the folder
+  *from the current type*, so those files would silently become impossible to clean up on delete.
+  `IArtworkService.RelocateArtworkAsync` now moves the asset folder and rewrites the stored paths;
+  `MediaEditorViewModel.Save()` calls it whenever an existing item's category actually changes.
+- **Diagnostic timing logs** — added while investigating a reported "entering 番剧 pauses but
+  电影/剧集 don't" report: `LibraryViewModel.ApplyPage()` logs how long building a page's cards
+  took (isolates pure WPF layout cost — `WrapPanel` is not virtualized, so this scales with how
+  many cards are on the page, a real candidate given Anime currently has far more items than
+  Movies/TV in the reporting user's library), and `ArtworkService.GetPosterThumbnailAsync` logs
+  when it has to regenerate a stale/missing thumbnail (a cold cache after a backup **restore** —
+  restores don't carry the thumbnail cache over — would show up here). Not yet conclusively
+  diagnosed; these logs are the next step to get real numbers instead of guessing further.
 
 ### Anime seasons (Phase 7) — *done*
 - `SeasonsViewModel` + `SeasonsView`: left year list, four season tabs with per-year counts,
@@ -309,15 +326,15 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 122 passing (schema/migrations, cascade delete, unique
-  constraints, media CRUD, editor category override + save + Anime-field clearing on switch,
-  `ShowOnHome` default/persist/recently-added-exclusion, episode
+- `dotnet test AniVault.slnx` — 124 passing (schema/migrations, cascade delete, unique
+  constraints, media CRUD, editor category override + save + Anime-field clearing on switch +
+  artwork relocation on category switch, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
   round-trip + month free-text parsing + tag paging, rating-calculator maths, single-instance
   guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +
   drag-reorder across pages, season mapping + buckets,
-  artwork import/thumbnail/clear/delete + oversized-poster downscale-on-import +
+  artwork import/thumbnail/clear/delete + oversized-poster downscale-on-import + folder relocation +
   compress-existing-artwork pass, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,

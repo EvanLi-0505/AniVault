@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AniVault.Models;
@@ -104,5 +105,40 @@ public class MediaEditorViewModelTests
         var saved = await mediaService.GetByIdAsync(created.Id);
         Assert.Equal(MediaType.Movie, saved!.MediaType);
         Assert.Null(saved.AirSeason);
+    }
+
+    [Fact]
+    public async Task Switching_Category_On_Save_Relocates_Existing_Artwork()
+    {
+        using var lib = new TestLibrary();
+        var mediaService = new MediaService(lib);
+        var artwork = new ArtworkService(lib, lib.Paths, NullLogger<ArtworkService>.Instance);
+        var created = await mediaService.CreateAsync(new Media { MediaType = MediaType.TvSeries, Title = "Misfiled Movie" });
+
+        var onePixelPng = System.Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
+        var source = Path.Combine(Path.GetTempPath(), $"editor-art-{System.Guid.NewGuid():N}.png");
+        File.WriteAllBytes(source, onePixelPng);
+        try
+        {
+            await artwork.SetPosterAsync(created.Id, source);
+        }
+        finally
+        {
+            File.Delete(source);
+        }
+
+        var oldAssetDir = lib.Paths.GetMediaAssetDirectory(MediaType.TvSeries, created.Id);
+        Assert.True(Directory.Exists(oldAssetDir));
+
+        var vm = Create(lib);
+        await vm.InitializeForEditAsync(created.Id);
+        vm.MediaType = MediaType.Movie;
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        Assert.False(Directory.Exists(oldAssetDir));
+        var saved = await mediaService.GetByIdAsync(created.Id);
+        Assert.Equal($"Movies/{created.Id}/poster.png", saved!.PosterPath);
+        Assert.True(File.Exists(lib.Paths.ToAbsolutePath(saved.PosterPath!)));
     }
 }
