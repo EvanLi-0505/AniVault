@@ -53,7 +53,8 @@ EF migrations: `dotnet dotnet-ef migrations add <Name> --project src/AniVault`.
 ## Conventions (short version — full detail in docs/ARCHITECTURE.md)
 
 - ViewModel-first navigation (`INavigationService`); `App.xaml` maps VM type → View.
-- Every service has an interface and is registered in `App.xaml.cs`.
+- Every service has an interface and is registered in `Composition/ServiceCollectionExtensions.cs`
+  (one extension method per subsystem — see docs/ARCHITECTURE.md → "Adding a pluggable subsystem").
 - Services never reference WPF types (exceptions: `DialogService`, `*Service` launchers in
   the composition root that open a Window).
 - Colours: only `{DynamicResource Brush.*}` from `Resources/Themes/*Theme.xaml`. Never hard-code

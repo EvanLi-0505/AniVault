@@ -1,14 +1,12 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Threading;
+using AniVault.Composition;
 using AniVault.Data;
 using AniVault.Services;
 using AniVault.Services.Logging;
 using AniVault.ViewModels;
 using AniVault.Views;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -173,124 +171,6 @@ public partial class App : Application
         }
     }
 
-    /// <summary>
-    /// Dev/CI aid: with ANIVAULT_SMOKE=1, visit every sidebar page once and then exit,
-    /// so a broken page or binding surfaces in the log without any clicking.
-    /// </summary>
-    private async Task RunNavigationSmokeTestAsync(MainWindow shell)
-    {
-        var viewModel = (ViewModels.ShellViewModel)shell.DataContext;
-        foreach (var item in viewModel.NavItems.Where(i => i.IsSelectable).ToList())
-        {
-            viewModel.SelectedNavItem = item;
-            await Task.Delay(350);
-            _logger!.LogInformation("Smoke: visited '{Page}'.", item.Label);
-        }
-
-        // Exercise the runtime theme swap.
-        var themes = _services!.GetRequiredService<IThemeService>();
-        await themes.SetThemeAsync(AppTheme.Light);
-        await Task.Delay(300);
-        await themes.SetThemeAsync(AppTheme.Dark);
-        _logger!.LogInformation("Smoke: toggled theme.");
-
-        // Exercise the runtime language swap: re-visit every page in Chinese, then restore English.
-        var loc = _services!.GetRequiredService<Services.LocalizationService>();
-        var originalLanguage = loc.Current;
-        await loc.SetLanguageAsync(AppLanguage.Chinese);
-        await Task.Delay(200);
-        foreach (var item in viewModel.NavItems.Where(i => i.IsSelectable).ToList())
-        {
-            viewModel.SelectedNavItem = item;
-            await Task.Delay(120);
-        }
-
-        _logger!.LogInformation("Smoke: visited every page in Chinese.");
-        await loc.SetLanguageAsync(originalLanguage);
-
-        // Also open a media detail page if the library has any items.
-        var nav = _services!.GetRequiredService<INavigationService>();
-        var media = await _services!.GetRequiredService<IMediaService>().GetRecentlyAddedAsync(1);
-        if (media.Count > 0)
-        {
-            nav.NavigateToDetail<ViewModels.MediaDetailViewModel>(vm => vm.MediaId = media[0].Id);
-            await Task.Delay(600);
-            _logger!.LogInformation("Smoke: opened detail for media {Id}.", media[0].Id);
-        }
-
-        // Load-and-close each modal window so a broken window template surfaces in the log
-        // (the page tour above never opens these).
-        await SmokeShowWindowAsync("Add-media editor", () =>
-        {
-            var vm = _services!.GetRequiredService<ViewModels.MediaEditorViewModel>();
-            _ = vm.InitializeForNewAsync(Models.MediaType.Anime);
-            return new Views.MediaEditorWindow { DataContext = vm, Owner = shell };
-        });
-        await SmokeShowWindowAsync("Online search", () =>
-        {
-            var vm = _services!.GetRequiredService<ViewModels.OnlineSearchViewModel>();
-            _ = vm.InitializeAsync(Models.MediaType.Anime);
-            return new Views.OnlineSearchWindow { DataContext = vm, Owner = shell };
-        });
-        await SmokeShowWindowAsync("First-run", () =>
-            new Views.FirstRunWindow { DataContext = _services!.GetRequiredService<ViewModels.FirstRunViewModel>(), Owner = shell });
-        await SmokeShowWindowAsync("Custom provider", () =>
-        {
-            var vm = _services!.GetRequiredService<ViewModels.CustomProviderViewModel>();
-            _ = vm.LoadAsync();
-            return new Views.CustomProviderWindow { DataContext = vm, Owner = shell };
-        });
-        await SmokeShowWindowAsync("Rating questionnaire", () => new Views.RatingCalculatorWindow
-        {
-            DataContext = _services!.GetRequiredService<ViewModels.RatingCalculatorViewModel>(),
-            Owner = shell,
-        });
-        await SmokeShowWindowAsync("Rating rubric", () => new Views.RatingGuideWindow { Owner = shell });
-
-        // Exercise the themed Calendar / DatePicker drop-down templates in all three display modes.
-        await SmokeShowWindowAsync("Calendar", () =>
-        {
-            var calendar = new System.Windows.Controls.Calendar { SelectedDate = DateTime.Today };
-            var window = new Window { Content = calendar, Owner = shell, Width = 300, Height = 300 };
-            window.Loaded += async (_, _) =>
-            {
-                foreach (var mode in new[]
-                {
-                    System.Windows.Controls.CalendarMode.Year,
-                    System.Windows.Controls.CalendarMode.Decade,
-                    System.Windows.Controls.CalendarMode.Month,
-                })
-                {
-                    calendar.DisplayMode = mode;
-                    await Task.Delay(60);
-                }
-            };
-            return window;
-        });
-
-        _logger!.LogInformation("Smoke test complete.");
-        Shutdown();
-    }
-
-    private async Task SmokeShowWindowAsync(string name, Func<System.Windows.Window> create)
-    {
-        try
-        {
-            var window = create();
-            window.ShowInTaskbar = false;
-            window.WindowStartupLocation = WindowStartupLocation.Manual;
-            window.Left = -10000;
-            window.Show();
-            await Task.Delay(250);
-            window.Close();
-            _logger!.LogInformation("Smoke: opened '{Window}'.", name);
-        }
-        catch (Exception ex)
-        {
-            _logger!.LogError(ex, "Smoke: window '{Window}' failed to open.", name);
-        }
-    }
-
     /// <summary>Shows the modal first-run window. Returns true when setup completed successfully.</summary>
     private bool ShowFirstRun()
     {
@@ -308,9 +188,17 @@ public partial class App : Application
         return completed;
     }
 
+    /// <summary>
+    /// The composition root. Each subsystem registers itself in its own extension method
+    /// (<see cref="Composition.ServiceCollectionExtensions"/>) so adding a new one — the
+    /// intended shape for a future feature like online watching — is a single line here,
+    /// not more entries dropped into a long flat list. See docs/ARCHITECTURE.md →
+    /// "Adding a pluggable subsystem".
+    /// </summary>
     private static ServiceProvider BuildServiceProvider()
     {
         var services = new ServiceCollection();
+        var appVersion = typeof(App).Assembly.GetName().Version?.ToString(2) ?? "0.1";
 
         services.AddLogging(builder =>
         {
@@ -323,171 +211,15 @@ public partial class App : Application
             builder.Services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<FileLoggerProvider>());
         });
 
-        // Core infrastructure
-        services.AddSingleton<IBootstrapConfigService, BootstrapConfigService>();
-        services.AddSingleton<IAppPathService, AppPathService>();
-        services.AddSingleton<INavigationService, NavigationService>();
-        services.AddSingleton<IDialogService, DialogService>();
-        services.AddSingleton<IMediaEditorService, MediaEditorService>();
-
-        // Database — the connection string is resolved lazily (on first CreateDbContext), so the
-        // app can start and show first-run setup before a data directory has been chosen.
-        services.AddSingleton<IDbContextFactory<AppDbContext>, Data.RuntimeDbContextFactory>();
-        services.AddSingleton<DatabaseInitializer>();
-
-        // Application services
-        services.AddSingleton<ISettingsService, SettingsService>();
-        services.AddSingleton<ISecureSettingsService, SecureSettingsService>();
-        services.AddSingleton<IThemeService, ThemeService>();
-        services.AddSingleton<LocalizationService>();
-        services.AddSingleton<ILocalizationService>(sp => sp.GetRequiredService<LocalizationService>());
-        services.AddSingleton<IMediaService, MediaService>();
-        services.AddSingleton<IMediaQueryService, MediaQueryService>();
-        services.AddSingleton<ITagService, TagService>();
-        services.AddSingleton<Services.Artwork.IArtworkService, Services.Artwork.ArtworkService>();
-        services.AddSingleton<Services.Artwork.IImageDownloadService, Services.Artwork.ImageDownloadService>();
-        services.AddSingleton<IMediaCardFactory, MediaCardFactory>();
-        services.AddSingleton<Services.Backup.IBackupService, Services.Backup.BackupService>();
-        services.AddSingleton<Services.Export.ILibraryExportService, Services.Export.LibraryExportService>();
-
-        // Metadata providers (network only ever on explicit user action)
-        var appVersion = typeof(App).Assembly.GetName().Version?.ToString(2) ?? "0.1";
-        services.AddHttpClient(Metadata.Providers.ProviderHttp.HttpClientName, client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(20);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd($"AniVault/{appVersion} (personal media library)");
-            client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
-        });
-        services.AddSingleton<Metadata.ICustomProviderStore, Metadata.CustomProviderStore>();
-        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.BangumiProvider>();
-        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.AniListProvider>();
-        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.JikanProvider>();
-        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.KitsuProvider>();
-        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.TmdbProvider>();
-        services.AddSingleton<Metadata.IMetadataProvider, Metadata.Providers.CustomMetadataProvider>();
-        services.AddSingleton<Metadata.IMetadataService, Metadata.MetadataService>();
-        services.AddSingleton<Metadata.IMetadataImporter, Metadata.MetadataImporter>();
-        services.AddSingleton<IOnlineSearchService, OnlineSearchService>();
-        services.AddSingleton<ICustomProviderService, CustomProviderService>();
-        services.AddSingleton<IRatingCalculatorService, RatingCalculatorService>();
-        services.AddSingleton<IRatingGuideService, RatingGuideService>();
-
-        // ViewModels
-        services.AddSingleton<ShellViewModel>();
-        services.AddTransient<FirstRunViewModel>();
-        services.AddTransient<HomeViewModel>();
-        services.AddTransient<LibraryViewModel>();
-        services.AddTransient<MediaDetailViewModel>();
-        services.AddTransient<TagsViewModel>();
-        services.AddTransient<SeasonsViewModel>();
-        services.AddTransient<SettingsViewModel>();
-        services.AddTransient<BackupExportViewModel>();
-        services.AddTransient<MetadataSettingsViewModel>();
-        services.AddTransient<CustomProviderViewModel>();
-        services.AddTransient<RatingCalculatorViewModel>();
-        services.AddTransient<OnlineSearchViewModel>();
-        services.AddTransient<PlaceholderViewModel>();
-        services.AddTransient<MediaEditorViewModel>();
-        services.AddTransient<TagPickerViewModel>();
-        services.AddTransient<FilterPanelViewModel>();
-
-        // Windows
-        services.AddSingleton<MainWindow>();
+        services.AddCoreInfrastructure();
+        services.AddDatabase();
+        services.AddDomainServices();
+        services.AddMetadataServices(appVersion);
+        services.AddFeatureServices();
+        services.AddViewModels();
 
         return services.BuildServiceProvider();
     }
-
-    private void SetupGlobalExceptionHandlers()
-    {
-        // Surface XAML data-binding failures in the log (they are otherwise silent).
-        System.Diagnostics.PresentationTraceSources.Refresh();
-        System.Diagnostics.PresentationTraceSources.DataBindingSource.Listeners.Add(
-            new BindingErrorListener(_logger!));
-        System.Diagnostics.PresentationTraceSources.DataBindingSource.Switch.Level =
-            System.Diagnostics.SourceLevels.Error;
-
-        DispatcherUnhandledException += OnDispatcherUnhandledException;
-        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
-            _logger?.LogCritical(args.ExceptionObject as Exception, "Unhandled domain exception.");
-        TaskScheduler.UnobservedTaskException += (_, args) =>
-        {
-            _logger?.LogError(args.Exception, "Unobserved task exception.");
-            args.SetObserved();
-        };
-    }
-
-    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        e.Handled = true;
-        _logger?.LogError(e.Exception, "Unhandled UI exception.");
-
-        var now = DateTimeOffset.UtcNow;
-        _recentUiExceptions = now - _lastUiException > TimeSpan.FromMinutes(2) ? 1 : _recentUiExceptions + 1;
-        _lastUiException = now;
-
-        // A burst of failures means the app is probably wedged — offer a clean restart.
-        if (_recentUiExceptions >= 5)
-        {
-            _recentUiExceptions = 0;
-            if (MessageBox.Show(Loc("Crash.RestartPrompt"), "AniVault",
-                    MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
-            {
-                RestartSelf();
-            }
-
-            return;
-        }
-
-        // Otherwise: a quiet "kept running" note, rate-limited so a repeating fault can't spam it.
-        if (now - _lastCrashDialog > TimeSpan.FromSeconds(5))
-        {
-            _lastCrashDialog = now;
-            MessageBox.Show(Loc("Crash.Continue"), "AniVault", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-    }
-
-    private void RestartSelf()
-    {
-        try
-        {
-            // Release the single-instance mutex first, or the fresh process just bounces off it.
-            _instanceGuard?.Dispose();
-            _instanceGuard = null;
-
-            var exe = Environment.ProcessPath;
-            if (!string.IsNullOrEmpty(exe))
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Could not relaunch AniVault.");
-        }
-        finally
-        {
-            Shutdown();
-        }
-    }
-
-    private void BringToFront()
-    {
-        if (MainWindow is not { } window)
-        {
-            return;
-        }
-
-        if (window.WindowState == WindowState.Minimized)
-        {
-            window.WindowState = WindowState.Normal;
-        }
-
-        window.Activate();
-        window.Topmost = true;
-        window.Topmost = false;
-    }
-
-    private static string Loc(string key) => LocalizationService.Instance?.Text(key) ?? key;
 
     protected override void OnExit(ExitEventArgs e)
     {
@@ -495,25 +227,5 @@ public partial class App : Application
         _instanceGuard?.Dispose();
         _services?.Dispose();
         base.OnExit(e);
-    }
-
-    /// <summary>Forwards WPF binding-error trace output to the application log.</summary>
-    private sealed class BindingErrorListener : System.Diagnostics.TraceListener
-    {
-        private readonly ILogger _logger;
-
-        public BindingErrorListener(ILogger logger) => _logger = logger;
-
-        public override void Write(string? message)
-        {
-        }
-
-        public override void WriteLine(string? message)
-        {
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                _logger.LogWarning("XAML binding: {Message}", message);
-            }
-        }
     }
 }

@@ -83,6 +83,9 @@
 - `TagService`: create / rename / delete / delete-unused, case-insensitive de-dup, assign to media.
 - Tag editor component (`TagPickerViewModel`) in the media editor; clickable tag chips on the detail page.
 - **Tags page**: every tag with usage count; rename, delete, remove unused, open as a filtered view.
+  The "new tag" box was a nearly-invisible sliver (a `*`-width column inside an
+  `HorizontalAlignment="Left"` Grid collapses to ~0 width — a WPF star-sizing gotcha); it's now a
+  full-height 🏷-prefixed input with a visible watermark.
 - `MediaQueryService` + `MediaFilter` / `MediaSortOption`: one place translates combined filters
   (type, text incl. tag names, status, year, season, **month**, favorite, liked, min rating, tags
   any/all) + sort (title, my rating, broadcast/added/updated/completed date, episode count, asc/desc).
@@ -204,6 +207,26 @@
 - `ANIVAULT_SMOKE=1` visits every page on launch then exits (CI smoke test); WPF binding errors
   are forwarded to the log.
 - Conventions in `docs/ARCHITECTURE.md`.
+
+### Composition-root modularization — *requested*
+`App.xaml.cs`'s DI registration had grown into one 85-line flat method, and startup, the
+`ANIVAULT_SMOKE` test harness, and global exception handling were all tangled together in one
+520-line file. Split, pure code motion, no behaviour change:
+- `Composition/ServiceCollectionExtensions.cs`: `AddCoreInfrastructure` / `AddDatabase` /
+  `AddDomainServices` / `AddMetadataServices` / `AddFeatureServices` / `AddViewModels` — one
+  extension method per subsystem. `BuildServiceProvider` is now ~15 lines calling each.
+- `App.Smoke.cs` (partial `App`): the `ANIVAULT_SMOKE` page tour + modal-window smoke checks.
+- `App.CrashHandling.cs` (partial `App`): global exception handlers, the rate-limited crash
+  dialog / restart offer, single-instance activation, the binding-error listener.
+- `App.xaml.cs` itself is now ~230 lines: just `OnStartup` / `StartAsync` / `ShowFirstRun` /
+  `BuildServiceProvider` / `OnExit`.
+
+The intent (the user asked for this explicitly, with a future **online-watching** feature in
+mind): adding a new self-contained subsystem is now "one folder + one `Add<X>Services` method +
+one line in `BuildServiceProvider`", not more lines threaded into an already-long method. See
+docs/ARCHITECTURE.md → "Adding a pluggable subsystem" for the pattern and for what a future
+network-touching feature would specifically need to respect (its own settings switch, its own
+explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.

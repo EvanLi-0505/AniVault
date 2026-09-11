@@ -17,11 +17,48 @@ Controls (reusable       Models (entities + enums, shared by every layer)
   One screen = one ViewModel. Big screens compose **child ViewModels** exposed as
   properties (see `SettingsViewModel.DataManagement`) instead of growing.
 * **Services** — all real work: database access, files, backup, export. Every service has
-  an interface and is registered in `App.xaml.cs`. Services never touch WPF types
-  (except `DialogService`, which is the one deliberate UI seam).
+  an interface and is registered in `Composition/ServiceCollectionExtensions.cs`. Services
+  never touch WPF types (except `DialogService` and the modal-window *launcher* services —
+  `MediaEditorService`, `OnlineSearchService`, `CustomProviderService`,
+  `RatingCalculatorService`, `RatingGuideService` — whose only WPF-facing job is
+  `new SomeWindow { DataContext = vm }.ShowDialog()`, kept in the composition root so
+  ViewModels never reference a View type directly).
 * **Data** — `AppDbContext`, one `IEntityTypeConfiguration` per entity, EF migrations.
   Access it only through a service, never from a ViewModel.
 * **Models** — POCO entities and enums. No behaviour.
+
+## Adding a pluggable subsystem
+
+`App.xaml.cs` (`BuildServiceProvider`) is intentionally thin — one call per subsystem, each
+implemented as its own extension method in `Composition/ServiceCollectionExtensions.cs`
+(`AddCoreInfrastructure`, `AddDatabase`, `AddDomainServices`, `AddMetadataServices`,
+`AddFeatureServices`, `AddViewModels`). Adding a self-contained subsystem is meant to be:
+
+1. A new top-level folder for its models/services (`Metadata/` is the reference shape:
+   a provider interface + isolated implementations + one service that owns the gating rule).
+2. One new `Add<Subsystem>Services` extension method that registers it.
+3. One new line calling that method from `BuildServiceProvider`.
+4. If it needs a modal UI entry point, a launcher service following the pattern in
+   `AddFeatureServices` (`RatingCalculatorService` is the smallest example to copy).
+
+This is also `App.xaml.cs`'s own shape: startup/shutdown lifecycle lives there, the DI
+composition root lives in `Composition/`, the `ANIVAULT_SMOKE=1` test harness lives in
+`App.Smoke.cs`, and global exception handling + single-instance activation live in
+`App.CrashHandling.cs` — three concerns that used to be tangled in one file, now three
+partial-class files that only share `App`'s private fields.
+
+**If a future feature needs the network** (the most likely candidate being online watching /
+streaming playback), it must follow the same rule `Metadata/` follows — nothing here is
+license to add background or automatic network access:
+
+- Its own folder (e.g. `Playback/`), never reusing `Metadata/`'s types for an unrelated purpose.
+- Its own explicit settings switch (e.g. `network.onlineWatchEnabled`), off by default, checked
+  before every call — see `MetadataService.EnsureAllowedAsync` for the pattern.
+- Its own explicit button in the UI (e.g. "▶ Watch online" next to "🌐 Search online" on the
+  detail page) — never triggered by navigation, a timer, or app startup.
+- Its own `ProviderHttp`-style HTTP plumbing (or reuse `ProviderHttp` itself if the shape fits),
+  never touching personal data (rating/tags/notes/status/watched state) — same rule as metadata
+  refresh.
 
 ## Navigation
 
@@ -39,7 +76,8 @@ To add a page:
 ## Reusable UI components (`Controls/`)
 
 Prefer a small `UserControl` with `DependencyProperty` inputs over copy-pasting XAML.
-Current components: `MediaCard`, `StatusBadge`, `RatingBadge`, `EmptyState`.
+Current components: `MediaCard`, `MediaRow`, `StatusBadge`, `RatingBadge`, `RatingStars`,
+`EmptyState`, `TagChip`, `FilterPanel`.
 Rule of thumb: if a visual pattern appears on two screens, promote it to `Controls/`.
 
 ## Theming
@@ -77,8 +115,9 @@ button (`Search online`, `Refresh metadata`), only when `network.onlineSearchEna
 and never on startup, on a timer, or in the background. Poster/backdrop downloads need the
 separate `network.posterDownloadEnabled` switch too. A new built-in provider implements
 `IMetadataProvider` (compose a `ProviderHttp`), adds one `AddSingleton<IMetadataProvider, …>`
-line in `App.xaml.cs`, and an `ExternalSource` enum value; `MetadataService` keys providers by
-`Source` and the Settings list picks them up automatically. `IMetadataProvider.IsConfigured`
+line in `AddMetadataServices` (`Composition/ServiceCollectionExtensions.cs`), and an
+`ExternalSource` enum value; `MetadataService` keys providers by `Source` and the Settings list
+picks them up automatically. `IMetadataProvider.IsConfigured`
 defaults to `true` — override it only for a provider that can be present but unusable (the
 user-defined `CustomMetadataProvider`, driven by `CustomProviderConfig` + `JsonPath`).
 

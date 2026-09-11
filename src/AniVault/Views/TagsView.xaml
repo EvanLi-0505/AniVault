@@ -19,18 +19,42 @@
 
         <TextBlock Grid.Row="0" Text="{loc:Loc Tags.Title}" Style="{StaticResource Text.Heading}" />
 
-        <Grid Grid.Row="1" Margin="0,16,0,12" MaxWidth="560" HorizontalAlignment="Left">
+        <Grid Grid.Row="1" Margin="0,16,0,12" MaxWidth="560">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Text="{Binding NewTagName, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="{loc:Loc Tags.NewPlaceholder}">
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Return" Command="{Binding CreateTagCommand}" />
-                </TextBox.InputBindings>
-            </TextBox>
+
+            <!-- New-tag input: icon + text, with a watermark shown while empty. The TextBox
+                 is borderless/transparent so it blends into the surrounding themed Border. -->
+            <Border Grid.Column="0" Background="{DynamicResource Brush.SurfaceAlt}"
+                    BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.Control}" Height="40"
+                    MouseDown="OnNewTagBoxMouseDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="🏷" FontSize="15" Opacity="0.75"
+                               Margin="12,0,4,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+                    <Grid Grid.Column="1">
+                        <TextBox x:Name="NewTagBox" Text="{Binding NewTagName, UpdateSourceTrigger=PropertyChanged}"
+                                 BorderThickness="0" Background="Transparent" FontSize="14"
+                                 Padding="0,0,10,0" VerticalContentAlignment="Center"
+                                 ToolTip="{loc:Loc Tags.NewPlaceholder}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding CreateTagCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <TextBlock Text="{loc:Loc Tags.NewPlaceholder}" Style="{StaticResource Text.Muted}"
+                                   VerticalAlignment="Center" IsHitTestVisible="False"
+                                   Visibility="{Binding NewTagName, Converter={StaticResource EmptyToVisible}}" />
+                    </Grid>
+                </Grid>
+            </Border>
+
             <Button Grid.Column="1" Content="{loc:Loc Tags.CreateTag}" Margin="8,0,0,0" Style="{StaticResource Button.Primary}" Command="{Binding CreateTagCommand}" />
             <Button Grid.Column="2" Content="{loc:Loc Tags.RemoveUnused}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding DeleteUnusedCommand}" />
         </Grid>
