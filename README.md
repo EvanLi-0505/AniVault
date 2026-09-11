@@ -3,10 +3,13 @@
 An offline-first personal anime & media library for Windows. Native WPF (.NET 10),
 SQLite storage, no web components, no telemetry, no automatic network access.
 
-> Status: offline library foundation + media detail page, episode tracking,
-> **ZIP backup / restore**, and **Markdown export** all working. See
-> [docs/STATUS.md](docs/STATUS.md) for details and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-> for the component conventions.
+> Status: 1.0 — full local library (CRUD, episodes, ratings, tags with drag-to-reorder,
+> anime seasons, artwork), optional online metadata search (Bangumi / AniList / Jikan /
+> Kitsu / TMDB / one custom provider) with duplicate detection and multi-select batch
+> import, ZIP backup/restore, Markdown export, single-instance guard, portable packaging +
+> installer, light/dark themes, and full English / 中文 localization. See
+> [docs/STATUS.md](docs/STATUS.md) for the authoritative feature list and
+> [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the component conventions.
 
 ## Requirements
 
@@ -46,14 +49,20 @@ AniVault.slnx
 src/AniVault/          WPF application (net10.0-windows)
   Models/              Entities + enums
   Data/                DbContext, EF configurations, migrations, initializer
-  Services/            Paths, settings, media CRUD, dialogs, navigation, logging
+  Services/            Paths, settings, media/tag CRUD, dialogs, navigation, logging,
+                       single-instance guard, theme + localization services
     Backup/            ZIP backup / restore
     Export/            Markdown library export (pluggable writers)
+  Metadata/            The only network code — online providers (Bangumi/AniList/Jikan/
+                       Kitsu/TMDB/custom), search + import + duplicate detection, gated
+                       behind an explicit button and a settings switch (never automatic)
+  Composition/         DI registration, one Add<X>Services extension method per subsystem
   ViewModels/          MVVM view models (CommunityToolkit.Mvvm)
   Views/               XAML views and dialog windows
-  Controls/            Reusable UserControls (MediaCard, StatusBadge, RatingBadge, EmptyState)
-  Resources/           Dark theme, control styles
-  Utilities/           Converters, enum display labels, image loading
+  Controls/            Reusable UserControls (MediaCard, MediaRow, StatusBadge, RatingBadge,
+                       RatingStars, EmptyState, TagChip, FilterPanel)
+  Resources/           Light/dark themes, control styles, en/zh string tables, rating rubric
+  Utilities/           Converters, enum display labels, image loading, markdown rendering
 tests/AniVault.Tests/  xUnit tests for the offline business logic
 build/                 Packaging scripts (publish, installer, icon)
 dist/                  Build artifacts (git-ignored; go to GitHub Releases)

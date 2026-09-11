@@ -17,8 +17,8 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 
     <!-- Product / version metadata (shown in the EXE properties and About text) -->
-    <Version>0.10.0</Version>
-    <InformationalVersion>0.10.0</InformationalVersion>
+    <Version>1.0.0</Version>
+    <InformationalVersion>1.0.0</InformationalVersion>
     <Product>AniVault</Product>
     <Company>AniVault</Company>
     <Authors>AniVault</Authors>

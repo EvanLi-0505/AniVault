@@ -1,5 +1,9 @@
 # Implementation status
 
+**Shipped as 1.0.0.** Everything below this line has landed, been build/test-verified (0
+warnings, 0 errors), and smoke-tested on both the dev build and the packaged portable exe /
+installer. See `CLAUDE.md` for the short version and the hard constraints.
+
 ## Done — Milestone 1 (Phase 1 + Phase 2)
 
 ### Phase 1 — Project foundation
