@@ -67,31 +67,69 @@ public static class ImageLoading
 
     /// <summary>Writes a downscaled JPEG copy of <paramref name="sourceAbsolutePath"/> to <paramref name="destinationAbsolutePath"/>.</summary>
     public static async Task<bool> SaveThumbnailAsync(string sourceAbsolutePath, string destinationAbsolutePath, int width)
+        => await Task.Run(() => TryWriteDownscaledJpeg(sourceAbsolutePath, destinationAbsolutePath, width, quality: 82));
+
+    /// <summary>
+    /// If <paramref name="sourcePath"/> is already at or under <paramref name="maxWidth"/> pixels
+    /// wide, does nothing and returns null so the caller keeps using the source unchanged.
+    /// Otherwise writes a downscaled JPEG copy to <paramref name="destinationJpegPath"/> and
+    /// returns that path. Caps how large a "full" stored poster/backdrop is ever allowed to be —
+    /// nothing in the app displays one wider than ~1280px, so a multi-thousand-pixel provider
+    /// original just means a slower disk read and JPEG decode every time the item's detail page
+    /// opens, for no visual benefit.
+    /// </summary>
+    public static async Task<string?> CapWidthAsync(string sourcePath, string destinationJpegPath, int maxWidth)
     {
         return await Task.Run(() =>
         {
-            try
+            if (!ExceedsWidth(sourcePath, maxWidth))
             {
-                var source = Decode(sourceAbsolutePath, width);
-                if (source is not BitmapSource bitmap)
-                {
-                    return false;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(destinationAbsolutePath)!);
-
-                var encoder = new JpegBitmapEncoder { QualityLevel = 82 };
-                encoder.Frames.Add(BitmapFrame.Create(bitmap));
-
-                using var stream = new FileStream(destinationAbsolutePath, FileMode.Create);
-                encoder.Save(stream);
-                return true;
+                return null;
             }
-            catch (Exception)
+
+            return TryWriteDownscaledJpeg(sourcePath, destinationJpegPath, maxWidth, quality: 88)
+                ? destinationJpegPath
+                : null;
+        });
+    }
+
+    private static bool ExceedsWidth(string path, int maxWidth)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+            return decoder.Frames[0].PixelWidth > maxWidth;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryWriteDownscaledJpeg(string sourcePath, string destinationPath, int width, int quality)
+    {
+        try
+        {
+            var source = Decode(sourcePath, width);
+            if (source is not BitmapSource bitmap)
             {
                 return false;
             }
-        });
+
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+
+            var encoder = new JpegBitmapEncoder { QualityLevel = quality };
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+            using var stream = new FileStream(destinationPath, FileMode.Create);
+            encoder.Save(stream);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     private static ImageSource? Decode(string absolutePath, int decodePixelWidth)

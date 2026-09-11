@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using AniVault.Models;
 using AniVault.Services;
+using AniVault.Services.Artwork;
 using AniVault.Services.Logging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -22,6 +23,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly ISettingsService _settings;
     private readonly IDialogService _dialogService;
     private readonly IMediaService _mediaService;
+    private readonly IArtworkService _artworkService;
     private readonly IThemeService _themeService;
     private readonly LocalizationService _loc;
     private readonly FileLoggerProvider _fileLogger;
@@ -44,6 +46,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         ISettingsService settings,
         IDialogService dialogService,
         IMediaService mediaService,
+        IArtworkService artworkService,
         IThemeService themeService,
         LocalizationService loc,
         FileLoggerProvider fileLogger,
@@ -56,6 +59,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _settings = settings;
         _dialogService = dialogService;
         _mediaService = mediaService;
+        _artworkService = artworkService;
         _themeService = themeService;
         _loc = loc;
         _fileLogger = fileLogger;
@@ -181,6 +185,48 @@ public sealed partial class SettingsViewModel : ViewModelBase
             _dialogService.ShowError(_loc.Text("Settings.ClearLogsFailed"));
         }
     }
+
+    [RelayCommand]
+    private async Task CompressArtwork()
+    {
+        if (!_paths.IsConfigured)
+        {
+            _dialogService.ShowWarning(_loc.Text("Settings.FolderMissing"));
+            return;
+        }
+
+        if (!_dialogService.Confirm(_loc.Text("Settings.CompressArtworkConfirm"), _loc.Text("Settings.CompressArtworkTitle")))
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await _artworkService.CompressExistingArtworkAsync();
+            _logger.LogInformation(
+                "Compressed {Count} artwork file(s), saved {Bytes} bytes.", result.FilesCompressed, result.BytesSaved);
+            _dialogService.ShowInfo(result.FilesCompressed == 0
+                ? _loc.Text("Settings.CompressArtworkNone")
+                : _loc.Format("Settings.CompressArtworkDoneFormat", result.FilesCompressed, FormatBytes(result.BytesSaved)));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to compress existing artwork.");
+            _dialogService.ShowError(_loc.Text("Settings.CompressArtworkFailed"));
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private static string FormatBytes(long bytes) => bytes switch
+    {
+        >= 1024 * 1024 => $"{bytes / (1024.0 * 1024.0):0.0} MB",
+        >= 1024 => $"{bytes / 1024.0:0.0} KB",
+        _ => $"{bytes} B",
+    };
 
     private void PersistIfLoaded(string key, string? value)
     {

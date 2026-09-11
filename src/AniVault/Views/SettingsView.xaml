@@ -30,6 +30,7 @@
                         <Button Content="{loc:Loc Settings.OpenDataFolder}" Command="{Binding OpenDataFolderCommand}" />
                         <Button Content="{loc:Loc Settings.OpenLogsFolder}" Command="{Binding OpenLogsFolderCommand}" />
                         <Button Content="{loc:Loc Settings.ClearLogs}" Command="{Binding ClearLogsCommand}" />
+                        <Button Content="{loc:Loc Settings.CompressArtwork}" Command="{Binding CompressArtworkCommand}" />
                         <Button Content="{loc:Loc Settings.ChangeDataFolder}" Command="{Binding ChangeDataFolderCommand}" />
                     </WrapPanel>
                 </StackPanel>

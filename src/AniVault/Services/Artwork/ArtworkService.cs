@@ -10,6 +10,9 @@ using Microsoft.Extensions.Logging;
 
 namespace AniVault.Services.Artwork;
 
+/// <summary>Result of a <see cref="IArtworkService.CompressExistingArtworkAsync"/> pass.</summary>
+public sealed record ArtworkCompressionResult(int FilesCompressed, long BytesSaved);
+
 /// <summary>
 /// Owns everything about local artwork files: importing a poster / backdrop into a media
 /// item's asset folder, maintaining a small on-disk thumbnail for grid cards, and cleaning
@@ -37,11 +40,27 @@ public interface IArtworkService
 
     /// <summary>Absolute path to the full backdrop image, or null if none / missing.</summary>
     string? GetBackdropPath(Media media);
+
+    /// <summary>
+    /// Re-encodes every stored poster/backdrop wider than the app's own display cap down to a
+    /// smaller JPEG, in place. A one-time maintenance pass for libraries that accumulated
+    /// oversized artwork before the cap existed on import (or from a provider that serves very
+    /// large originals, e.g. Bangumi) — shrinks disk usage and speeds up opening those items'
+    /// detail pages.
+    /// </summary>
+    Task<ArtworkCompressionResult> CompressExistingArtworkAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class ArtworkService : IArtworkService
 {
     private const int ThumbnailWidth = 360;
+
+    // Nothing in the app displays a poster wider than ~500px or a backdrop wider than ~1280px
+    // (see MediaDetailViewModel.LoadArtworkAsync), so the "full" file on disk never needs to be
+    // any larger than this — a provider's original artwork can be several thousand pixels wide.
+    private const int MaxPosterWidth = 900;
+    private const int MaxBackdropWidth = 1600;
+
     private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".bmp" };
 
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
@@ -164,8 +183,15 @@ public sealed class ArtworkService : IArtworkService
             TryDelete(existing);
         }
 
-        var destination = Path.Combine(assetDir, name + extension);
-        File.Copy(sourceImagePath, destination, overwrite: true);
+        var maxWidth = isPoster ? MaxPosterWidth : MaxBackdropWidth;
+        var jpegDestination = Path.Combine(assetDir, name + ".jpg");
+        var destination = await ImageLoading.CapWidthAsync(sourceImagePath, jpegDestination, maxWidth);
+        if (destination is null)
+        {
+            destination = Path.Combine(assetDir, name + extension);
+            File.Copy(sourceImagePath, destination, overwrite: true);
+        }
+
         var relative = _paths.ToRelativePath(destination);
 
         if (isPoster)
@@ -180,6 +206,97 @@ public sealed class ArtworkService : IArtworkService
 
         media.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ArtworkCompressionResult> CompressExistingArtworkAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var items = await db.Media
+            .Where(m => m.PosterPath != null || m.BackdropPath != null)
+            .ToListAsync(cancellationToken);
+
+        var filesCompressed = 0;
+        long bytesSaved = 0;
+        var touched = false;
+
+        foreach (var media in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var posterSaved = await CompressFileInPlaceAsync(media, isPoster: true, MaxPosterWidth);
+            var backdropSaved = await CompressFileInPlaceAsync(media, isPoster: false, MaxBackdropWidth);
+
+            if (posterSaved > 0 || backdropSaved > 0)
+            {
+                filesCompressed += (posterSaved > 0 ? 1 : 0) + (backdropSaved > 0 ? 1 : 0);
+                bytesSaved += posterSaved + backdropSaved;
+                media.UpdatedAt = DateTime.UtcNow;
+                touched = true;
+            }
+        }
+
+        if (touched)
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return new ArtworkCompressionResult(filesCompressed, bytesSaved);
+    }
+
+    /// <summary>
+    /// Re-encodes one existing poster/backdrop down to <paramref name="maxWidth"/> if it's
+    /// currently wider, mutating <paramref name="media"/>'s path field in place (the caller
+    /// saves). Returns bytes saved, or 0 if nothing changed (already small enough, decode failed,
+    /// or the re-encode somehow didn't come out smaller).
+    /// </summary>
+    private async Task<long> CompressFileInPlaceAsync(Media media, bool isPoster, int maxWidth)
+    {
+        var relative = isPoster ? media.PosterPath : media.BackdropPath;
+        if (relative is null)
+        {
+            return 0;
+        }
+
+        var absolute = _paths.ToAbsolutePath(relative);
+        if (!File.Exists(absolute))
+        {
+            return 0;
+        }
+
+        var before = new FileInfo(absolute).Length;
+        var dir = Path.GetDirectoryName(absolute)!;
+        var baseName = Path.GetFileNameWithoutExtension(absolute);
+        var tempJpeg = Path.Combine(dir, baseName + ".compressing.jpg");
+
+        var written = await ImageLoading.CapWidthAsync(absolute, tempJpeg, maxWidth);
+        if (written is null)
+        {
+            return 0;
+        }
+
+        var after = new FileInfo(tempJpeg).Length;
+        if (after >= before)
+        {
+            TryDelete(tempJpeg);
+            return 0;
+        }
+
+        var finalPath = Path.Combine(dir, baseName + ".jpg");
+        TryDelete(absolute);
+        File.Move(tempJpeg, finalPath, overwrite: true);
+
+        var relativeFinal = _paths.ToRelativePath(finalPath);
+        if (isPoster)
+        {
+            media.PosterPath = relativeFinal;
+            await ImageLoading.SaveThumbnailAsync(finalPath, ThumbnailPath(media.Id), ThumbnailWidth);
+        }
+        else
+        {
+            media.BackdropPath = relativeFinal;
+        }
+
+        return before - after;
     }
 
     private string ThumbnailPath(int mediaId)

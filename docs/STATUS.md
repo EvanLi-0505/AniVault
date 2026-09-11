@@ -254,6 +254,21 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - Detail page: backdrop shown as a gradient-scrimmed banner when present.
 - Missing / corrupt / unsupported images fail gracefully ("No poster", warning on bad type).
 - `MediaCardFactory` centralises card creation across Home / library / seasons pages.
+- **Poster/backdrop width cap** — *requested* (perf): the user noticed anime detail pages with a
+  large stored poster opened with a visible ~0.5s pause that movies/TV didn't have. Root cause:
+  a provider's original artwork (e.g. Bangumi's "large" size — one real example was 2898×4096,
+  over 1 MB) was stored and re-read/re-decoded from disk **unshrunk** every time the detail page
+  opened, even though nothing in the app ever displays a poster wider than ~500px or a backdrop
+  wider than ~1280px. `ArtworkService.SetPosterAsync`/`SetBackdropAsync` now cap what's actually
+  written to disk (`ImageLoading.CapWidthAsync`: 900px for posters, 1600px for backdrops — probes
+  the source's natural pixel width first and only re-encodes as JPEG if it's actually over the
+  cap, so a normal-sized manually-picked image is left byte-for-byte unchanged) — this covers both
+  the manual "choose a poster" flow and online-metadata imports (`MetadataImporter` routes through
+  the same `ArtworkService` call). Settings → Data folder → **"Compress oversized artwork"**
+  (`IArtworkService.CompressExistingArtworkAsync`) is a one-time, explicit, opt-in maintenance
+  pass that re-encodes any already-stored poster/backdrop over the cap in place (only replaces a
+  file if the result actually comes out smaller; reports a "compressed N file(s), saved X" summary,
+  or "nothing needed compressing"), for artwork imported before this fix existed.
 
 ### Anime seasons (Phase 7) — *done*
 - `SeasonsViewModel` + `SeasonsView`: left year list, four season tabs with per-year counts,
@@ -294,7 +309,7 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 119 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 122 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, editor category override + save + Anime-field clearing on switch,
   `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
@@ -302,7 +317,8 @@ explicit button, never automatic — same rule `Metadata/` already follows).
   round-trip + month free-text parsing + tag paging, rating-calculator maths, single-instance
   guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +
   drag-reorder across pages, season mapping + buckets,
-  artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
+  artwork import/thumbnail/clear/delete + oversized-poster downscale-on-import +
+  compress-existing-artwork pass, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
   encrypted API keys, theme persistence, online-search multi-select + batch import).

@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using AniVault.Models;
 using AniVault.Services.Artwork;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,30 @@ public class ArtworkServiceTests
         var path = Path.Combine(Path.GetTempPath(), $"art-{Guid.NewGuid():N}{extension}");
         File.WriteAllBytes(path, OnePixelPng);
         return path;
+    }
+
+    /// <summary>A solid-color JPEG at an arbitrary size — big enough to exercise the width cap.</summary>
+    private static string WriteOversizedJpeg(int width, int height)
+    {
+        var pixels = new byte[width * height * 4];
+        var bitmap = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, width * 4);
+
+        var path = Path.Combine(Path.GetTempPath(), $"art-big-{Guid.NewGuid():N}.jpg");
+        var encoder = new JpegBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using (var stream = File.Create(path))
+        {
+            encoder.Save(stream);
+        }
+
+        return path;
+    }
+
+    private static int ReadPixelWidth(string path)
+    {
+        using var stream = File.OpenRead(path);
+        var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+        return decoder.Frames[0].PixelWidth;
     }
 
     [Fact]
@@ -157,5 +183,113 @@ public class ArtworkServiceTests
         {
             File.Delete(source);
         }
+    }
+
+    [Fact]
+    public async Task SetPoster_Downscales_An_Oversized_Source_Image()
+    {
+        using var lib = new TestLibrary();
+        var service = new ArtworkService(lib, lib.Paths, NullLogger<ArtworkService>.Instance);
+
+        int id;
+        await using (var db = lib.CreateDbContext())
+        {
+            var media = new Media { MediaType = MediaType.Anime, Title = "Big Poster" };
+            db.Media.Add(media);
+            await db.SaveChangesAsync();
+            id = media.Id;
+        }
+
+        var source = WriteOversizedJpeg(2400, 3200);
+        try
+        {
+            await service.SetPosterAsync(id, source);
+        }
+        finally
+        {
+            File.Delete(source);
+        }
+
+        await using var readDb = lib.CreateDbContext();
+        var saved = await readDb.Media.SingleAsync(m => m.Id == id);
+        var absolute = lib.Paths.ToAbsolutePath(saved.PosterPath!);
+
+        Assert.Equal($"Anime/{id}/poster.jpg", saved.PosterPath);
+        Assert.True(ReadPixelWidth(absolute) <= 900);
+    }
+
+    [Fact]
+    public async Task CompressExistingArtwork_Shrinks_An_Already_Oversized_Poster()
+    {
+        using var lib = new TestLibrary();
+        var service = new ArtworkService(lib, lib.Paths, NullLogger<ArtworkService>.Instance);
+
+        // Simulate a poster that predates the import-time cap (or came from a provider whose
+        // "large" size is huge) by writing it straight to the asset folder, bypassing SetPosterAsync.
+        int id;
+        string relativePath;
+        await using (var db = lib.CreateDbContext())
+        {
+            var media = new Media { MediaType = MediaType.Anime, Title = "Legacy Big Poster" };
+            db.Media.Add(media);
+            await db.SaveChangesAsync();
+            id = media.Id;
+
+            var assetDir = lib.Paths.GetMediaAssetDirectory(MediaType.Anime, id);
+            Directory.CreateDirectory(assetDir);
+            var absolute = Path.Combine(assetDir, "poster.jpg");
+            var oversized = WriteOversizedJpeg(2400, 3200);
+            File.Copy(oversized, absolute, overwrite: true);
+            File.Delete(oversized);
+
+            media.PosterPath = lib.Paths.ToRelativePath(absolute);
+            relativePath = media.PosterPath;
+            await db.SaveChangesAsync();
+        }
+
+        var before = new FileInfo(lib.Paths.ToAbsolutePath(relativePath)).Length;
+
+        var result = await service.CompressExistingArtworkAsync();
+
+        Assert.Equal(1, result.FilesCompressed);
+        Assert.True(result.BytesSaved > 0);
+
+        await using var readDb = lib.CreateDbContext();
+        var saved = await readDb.Media.SingleAsync(m => m.Id == id);
+        var absoluteAfter = lib.Paths.ToAbsolutePath(saved.PosterPath!);
+
+        Assert.True(ReadPixelWidth(absoluteAfter) <= 900);
+        Assert.True(new FileInfo(absoluteAfter).Length < before);
+    }
+
+    [Fact]
+    public async Task CompressExistingArtwork_Does_Nothing_When_Everything_Is_Already_Small()
+    {
+        using var lib = new TestLibrary();
+        var service = new ArtworkService(lib, lib.Paths, NullLogger<ArtworkService>.Instance);
+
+        int id;
+        await using (var db = lib.CreateDbContext())
+        {
+            var media = new Media { MediaType = MediaType.Anime, Title = "Small Poster" };
+            db.Media.Add(media);
+            await db.SaveChangesAsync();
+            id = media.Id;
+        }
+
+        var source = WriteTempImage(".png");
+        try
+        {
+            await service.SetPosterAsync(id, source);
+        }
+        finally
+        {
+            File.Delete(source);
+        }
+
+        var result = await service.CompressExistingArtworkAsync();
+
+        Assert.Equal(0, result.FilesCompressed);
+        Assert.Equal(0, result.BytesSaved);
     }
 }
