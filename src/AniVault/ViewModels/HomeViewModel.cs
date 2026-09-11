@@ -16,7 +16,8 @@ namespace AniVault.ViewModels;
 /// </summary>
 public sealed partial class HomeViewModel : ViewModelBase
 {
-    private const int RowSize = 10;
+    /// <summary>Cap per row. Cards beyond this never load, even if the row is scrolled further.</summary>
+    private const int RowSize = 20;
 
     private readonly IMediaService _mediaService;
     private readonly IMediaQueryService _queryService;
@@ -67,13 +68,13 @@ public sealed partial class HomeViewModel : ViewModelBase
             Fill(RecentlyAdded, await _mediaService.GetRecentlyAddedAsync(RowSize));
 
             var watching = await _queryService.QueryAsync(
-                new MediaFilter { Status = WatchStatus.Watching },
+                new MediaFilter { Status = WatchStatus.Watching, ShowOnHome = true },
                 new MediaSortOption(MediaSortField.UpdatedDate, Descending: true));
             Fill(ContinueWatching, watching.Take(RowSize));
             HasContinueWatching = ContinueWatching.Count > 0;
 
             var rated = await _queryService.QueryAsync(
-                new MediaFilter { MinRating = 0.1 },
+                new MediaFilter { MinRating = 0.1, ShowOnHome = true },
                 new MediaSortOption(MediaSortField.MyRating, Descending: true));
             Fill(HighestRated, rated.Take(RowSize));
             HasHighestRated = HighestRated.Count > 0;

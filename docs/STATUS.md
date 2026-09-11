@@ -173,10 +173,20 @@
 - Slim dark scrollbars; sidebar selected item gets a left accent bar.
 - Thin indeterminate busy bar at the top of the content area, bound to the page's `IsBusy`.
 - `MediaCard` lifts slightly on hover; `RatingStars` control (five stars + exact number).
-- Detail page: status badge + star rating under the title; Favorite/Liked are stateful toggle
-  buttons; **Esc** goes back.
-- Home page rebuilt with horizontally-scrolling rows (`MediaRow` control): Continue watching,
-  Recently added, Highest rated; uses the shared `EmptyState`.
+- Detail page: status badge + star rating under the title; Favorite/Liked/**🏠 Show on Home** are
+  stateful toggle buttons; **Esc** goes back.
+- Home page rebuilt with horizontally-scrolling rows (`MediaRow` control), in this order:
+  **Continue watching → Highest rated → Recently added**; uses the shared `EmptyState`.
+  Each row caps at 20 cards. `Media.ShowOnHome` (personal data, default true, never touched by a
+  metadata refresh) lets the user exclude one item from every row via the detail-page toggle;
+  `MediaFilter.ShowOnHome` / `GetRecentlyAddedAsync` enforce it.
+- `MediaRow` fixes: the inner horizontal `ScrollViewer` used to swallow the page's vertical mouse
+  wheel whenever the cursor was over a row (a classic nested-`ScrollViewer` bug — scrolling would
+  "randomly" stop working depending on mouse position); it now forwards every wheel tick to its
+  parent instead. Its `MediaCard.OpenCommand` binding used `ElementName` from inside the row's own
+  `DataTemplate`, which — unlike every other `MediaCard` host in the app — didn't reliably resolve;
+  switched to the same `RelativeSource AncestorType` pattern `LibraryView`/`SeasonsView` use, so
+  clicking a Home card now opens its detail page.
 - Multi-collection `Include` queries switched to split queries (removes the EF perf warning).
 
 ### Artwork (Phase 8) — *done*
@@ -230,11 +240,12 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 98 passing (schema/migrations, cascade delete, unique
-  constraints, media CRUD, episode sync/watched/rating clamp/completed-stamp, backup round-trip,
-  Markdown export, combined query filters + sort incl. month, filter-panel choice round-trip +
-  month free-text parsing + tag paging, rating-calculator maths, single-instance guard, tag
-  service, season mapping + buckets,
+- `dotnet test AniVault.slnx` — 102 passing (schema/migrations, cascade delete, unique
+  constraints, media CRUD, `ShowOnHome` default/persist/recently-added-exclusion, episode
+  sync/watched/rating clamp/completed-stamp, backup round-trip,
+  Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
+  round-trip + month free-text parsing + tag paging, rating-calculator maths, single-instance
+  guard, tag service, season mapping + buckets,
   artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
@@ -247,6 +258,10 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 - Manually verified: a data folder on the previous schema (`InitialCreate` only) upgrades
   cleanly on next launch — only `AddAirMonth` applies, the pre-existing row survives with
   `AirMonth = NULL`, no data loss.
+- Manually verified: a data folder on the pre-`ShowOnHome` schema upgrades with the new column
+  **defaulted to `1` (true)** for every existing row — an upgrade never silently drops existing
+  items off the Home page. (The EF-generated migration defaulted the column to `false`, which
+  would have done exactly that; caught and corrected before shipping.)
 - Published single-file exe + installed exe: launch offline, migrate, show the dark UI.
 
 ## Not implemented yet

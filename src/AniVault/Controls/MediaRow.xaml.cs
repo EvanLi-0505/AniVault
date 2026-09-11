@@ -39,4 +39,26 @@ public partial class MediaRow : UserControl
         get => (ICommand?)GetValue(OpenCommandProperty);
         set => SetValue(OpenCommandProperty, value);
     }
+
+    /// <summary>
+    /// Hands every wheel tick straight to whatever ScrollViewer contains this row, instead of
+    /// letting the row's own (horizontal-only) ScrollViewer swallow it. Without this, scrolling
+    /// the page feels like it randomly stops working depending on whether the mouse happens to
+    /// be over one of the horizontally-scrolling rows. Re-raising on the *parent* (not on
+    /// <c>RowScroller</c> itself) means the synthetic bubble never re-enters this same
+    /// ScrollViewer — it only travels further up, to the page's real vertical scroller.
+    /// </summary>
+    private void OnRowPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (e.Handled || sender is not FrameworkElement { Parent: UIElement parent })
+        {
+            return;
+        }
+
+        e.Handled = true;
+        parent.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = MouseWheelEvent,
+        });
+    }
 }

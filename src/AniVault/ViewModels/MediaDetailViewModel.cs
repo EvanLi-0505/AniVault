@@ -54,6 +54,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
     [ObservableProperty] private WatchStatus _status;
     [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private bool _isLiked;
+    [ObservableProperty] private bool _showOnHome;
     [ObservableProperty] private ImageSource? _poster;
     [ObservableProperty] private ImageSource? _backdrop;
     [ObservableProperty] private bool _hasBackdrop;
@@ -161,6 +162,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         Status = media.Status;
         IsFavorite = media.IsFavorite;
         IsLiked = media.IsLiked;
+        ShowOnHome = media.ShowOnHome;
 
         OnPropertyChanged(nameof(HasWebsite));
         OnPropertyChanged(nameof(HasDescription));
@@ -294,7 +296,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         if (tag is not null)
         {
             _navigation.NavigateToDetail<LibraryViewModel>(vm => vm.Configure(new LibraryPreset(
-                $"Tag: {tag.Name}", "Every media item with this tag.", TagId: tag.Id)));
+                _loc.Format("Library.Preset.TagFormat", tag.Name), _loc.Text("Library.Preset.TagSub"), TagId: tag.Id)));
         }
     }
 
@@ -320,6 +322,18 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
 
         IsLiked = !IsLiked;
         await _mediaService.SetLikedAsync(_media.Id, IsLiked);
+    }
+
+    [RelayCommand]
+    private async Task ToggleShowOnHome()
+    {
+        if (_media is null)
+        {
+            return;
+        }
+
+        ShowOnHome = !ShowOnHome;
+        await _mediaService.SetShowOnHomeAsync(_media.Id, ShowOnHome);
     }
 
     [RelayCommand]

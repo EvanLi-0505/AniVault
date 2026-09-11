@@ -100,8 +100,11 @@
                         <StackPanel Margin="0,0,0,10" VerticalAlignment="Bottom" Orientation="Horizontal">
                             <ToggleButton IsChecked="{Binding IsFavorite, Mode=OneWay}" Margin="0,0,8,0" Padding="12,7"
                                           Command="{Binding ToggleFavoriteCommand}" Content="{loc:Loc Detail.Favorite}" />
-                            <ToggleButton IsChecked="{Binding IsLiked, Mode=OneWay}" Padding="12,7"
+                            <ToggleButton IsChecked="{Binding IsLiked, Mode=OneWay}" Margin="0,0,8,0" Padding="12,7"
                                           Command="{Binding ToggleLikedCommand}" Content="{loc:Loc Detail.Liked}" />
+                            <ToggleButton IsChecked="{Binding ShowOnHome, Mode=OneWay}" Padding="12,7"
+                                          Command="{Binding ToggleShowOnHomeCommand}" Content="{loc:Loc Detail.ShowOnHome}"
+                                          ToolTip="{loc:Loc Detail.ShowOnHomeTooltip}" />
                         </StackPanel>
                     </WrapPanel>
 

@@ -129,6 +129,8 @@
   "Detail.MyRating": "My rating (0 - 10)",
   "Detail.Favorite": "❤ Favorite",
   "Detail.Liked": "\uD83D\uDC4D Liked",
+  "Detail.ShowOnHome": "\uD83C\uDFE0 Show on Home",
+  "Detail.ShowOnHomeTooltip": "When off, this item never appears in the Home page's rows (Continue watching / Recently added / Highest rated).",
   "Detail.TypeFormat": "Type: {0}",
   "Detail.BroadcastFormat": "Broadcast: {0}",
   "Detail.DatesFormat": "Dates: {0}",

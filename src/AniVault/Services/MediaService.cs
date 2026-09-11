@@ -26,6 +26,7 @@ public interface IMediaService
     /// <summary>Every media item with episodes, tags and external ids loaded. Used by export.</summary>
     Task<IReadOnlyList<Media>> GetAllDetailedAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Newest items with <see cref="Media.ShowOnHome"/> set, for the Home page.</summary>
     Task<IReadOnlyList<Media>> GetRecentlyAddedAsync(int count, CancellationToken cancellationToken = default);
 
     Task<int> CountAsync(MediaType mediaType, CancellationToken cancellationToken = default);
@@ -41,6 +42,8 @@ public interface IMediaService
     Task SetFavoriteAsync(int mediaId, bool isFavorite, CancellationToken cancellationToken = default);
 
     Task SetLikedAsync(int mediaId, bool isLiked, CancellationToken cancellationToken = default);
+
+    Task SetShowOnHomeAsync(int mediaId, bool showOnHome, CancellationToken cancellationToken = default);
 
     Task SetRatingAsync(int mediaId, double? rating, CancellationToken cancellationToken = default);
 
@@ -120,6 +123,7 @@ public sealed class MediaService : IMediaService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await db.Media
             .AsNoTracking()
+            .Where(m => m.ShowOnHome)
             .OrderByDescending(m => m.CreatedAt)
             .Take(count)
             .ToListAsync(cancellationToken);
@@ -194,6 +198,9 @@ public sealed class MediaService : IMediaService
 
     public Task SetLikedAsync(int mediaId, bool isLiked, CancellationToken cancellationToken = default)
         => MutateMediaAsync(mediaId, m => m.IsLiked = isLiked, cancellationToken);
+
+    public Task SetShowOnHomeAsync(int mediaId, bool showOnHome, CancellationToken cancellationToken = default)
+        => MutateMediaAsync(mediaId, m => m.ShowOnHome = showOnHome, cancellationToken);
 
     public Task SetRatingAsync(int mediaId, double? rating, CancellationToken cancellationToken = default)
         => MutateMediaAsync(mediaId, m => m.MyRating = rating is null ? null : Math.Clamp(rating.Value, 0d, 10d), cancellationToken);

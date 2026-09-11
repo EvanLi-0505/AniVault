@@ -39,6 +39,31 @@ public class MediaQueryServiceTests
     }
 
     [Fact]
+    public async Task ShowOnHome_Filter_Excludes_Items_The_User_Hid_From_Home()
+    {
+        using var db = new TestDatabase();
+        await SeedAsync(db);
+        var service = new MediaQueryService(db);
+
+        await using (var ctx = db.CreateDbContext())
+        {
+            var vinland = ctx.Media.Single(m => m.Title == "Vinland Saga");
+            vinland.ShowOnHome = false;
+            await ctx.SaveChangesAsync();
+        }
+
+        var shown = await service.QueryAsync(new MediaFilter { ShowOnHome = true }, MediaSortOption.Default);
+        var hidden = await service.QueryAsync(new MediaFilter { ShowOnHome = false }, MediaSortOption.Default);
+        var everyone = await service.QueryAsync(new MediaFilter(), MediaSortOption.Default);
+
+        Assert.DoesNotContain(shown, m => m.Title == "Vinland Saga");
+        Assert.Equal(2, shown.Count);
+        Assert.Single(hidden);
+        Assert.Equal("Vinland Saga", hidden[0].Title);
+        Assert.Equal(3, everyone.Count);
+    }
+
+    [Fact]
     public async Task Combined_Filters_Narrow_Results()
     {
         using var db = new TestDatabase();

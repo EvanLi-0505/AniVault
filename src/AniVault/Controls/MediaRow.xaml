@@ -5,7 +5,12 @@
              x:Name="Root">
     <StackPanel Margin="0,0,0,8">
         <TextBlock Text="{Binding Header, ElementName=Root}" Style="{StaticResource Text.Subheading}" Margin="0,0,0,10" />
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <!-- PreviewMouseWheel is forwarded to the page's own vertical ScrollViewer (see code-behind):
+             a nested ScrollViewer otherwise swallows the wheel while the mouse happens to be over
+             this row, making page scrolling feel like it randomly stops working. Horizontal
+             scrolling here still works via the scrollbar / click-drag. -->
+        <ScrollViewer x:Name="RowScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      PreviewMouseWheel="OnRowPreviewMouseWheel">
             <ItemsControl ItemsSource="{Binding ItemsSource, ElementName=Root}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
@@ -13,7 +18,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <controls:MediaCard Margin="0,0,14,4"
-                                            OpenCommand="{Binding OpenCommand, ElementName=Root}" />
+                                            OpenCommand="{Binding OpenCommand, RelativeSource={RelativeSource AncestorType=controls:MediaRow}}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

@@ -9,8 +9,8 @@ namespace AniVault.Models;
 /// Fields are grouped into two conceptual categories:
 ///   * Provider-owned metadata (Title, Description, air dates, EpisodeCount, poster paths, ...)
 ///     — these may be overwritten by a future "Refresh Metadata" action.
-///   * Personal data (MyRating, IsFavorite, IsLiked, Status, Notes, watched episodes, tags)
-///     — these must NEVER be overwritten by an online provider.
+///   * Personal data (MyRating, IsFavorite, IsLiked, ShowOnHome, Status, Notes, watched
+///     episodes, tags) — these must NEVER be overwritten by an online provider.
 /// </summary>
 public class Media
 {
@@ -78,6 +78,13 @@ public class Media
     public bool IsFavorite { get; set; }
 
     public bool IsLiked { get; set; }
+
+    /// <summary>
+    /// Whether this item can appear in the Home page's rows (Continue watching / Recently added /
+    /// Highest rated). A personal display preference, not metadata — never touched by a provider
+    /// refresh. Defaults to true so existing and newly added items show up as before.
+    /// </summary>
+    public bool ShowOnHome { get; set; } = true;
 
     /// <summary>Local-only personal notes. Never sent to any online API.</summary>
     public string? Notes { get; set; }

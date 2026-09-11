@@ -94,6 +94,11 @@ public sealed class MediaQueryService : IMediaQueryService
             query = query.Where(m => m.IsFavorite == fav);
         }
 
+        if (filter.ShowOnHome is { } showOnHome)
+        {
+            query = query.Where(m => m.ShowOnHome == showOnHome);
+        }
+
         if (filter.IsLiked is { } liked)
         {
             query = query.Where(m => m.IsLiked == liked);

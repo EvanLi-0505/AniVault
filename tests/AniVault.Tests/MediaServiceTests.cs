@@ -11,6 +11,46 @@ public class MediaServiceTests
         => await service.CreateAsync(new Media { MediaType = type, Title = title, Description = description });
 
     [Fact]
+    public async Task New_Media_Defaults_To_Shown_On_Home()
+    {
+        using var database = new TestDatabase();
+        var service = new MediaService(database);
+
+        var created = await SeedAsync(service, MediaType.Anime, "Frieren");
+
+        Assert.True(created.ShowOnHome);
+    }
+
+    [Fact]
+    public async Task SetShowOnHomeAsync_Persists_The_Flag()
+    {
+        using var database = new TestDatabase();
+        var service = new MediaService(database);
+        var media = await SeedAsync(service, MediaType.Anime, "Frieren");
+
+        await service.SetShowOnHomeAsync(media.Id, false);
+
+        var reloaded = await service.GetByIdAsync(media.Id);
+        Assert.NotNull(reloaded);
+        Assert.False(reloaded!.ShowOnHome);
+    }
+
+    [Fact]
+    public async Task GetRecentlyAddedAsync_Excludes_Items_Hidden_From_Home()
+    {
+        using var database = new TestDatabase();
+        var service = new MediaService(database);
+        var shown = await SeedAsync(service, MediaType.Anime, "Shown");
+        var hidden = await SeedAsync(service, MediaType.Anime, "Hidden");
+        await service.SetShowOnHomeAsync(hidden.Id, false);
+
+        var recent = await service.GetRecentlyAddedAsync(10);
+
+        Assert.Contains(recent, m => m.Id == shown.Id);
+        Assert.DoesNotContain(recent, m => m.Id == hidden.Id);
+    }
+
+    [Fact]
     public async Task CreateAsync_Sets_Timestamps()
     {
         using var database = new TestDatabase();

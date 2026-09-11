@@ -28,6 +28,10 @@ public sealed record MediaFilter
 
     public bool? IsLiked { get; init; }
 
+    /// <summary>Restrict to items the user allows on the Home page. Used only by <c>HomeViewModel</c> —
+    /// there is no filter-panel UI for this.</summary>
+    public bool? ShowOnHome { get; init; }
+
     /// <summary>Minimum personal rating (inclusive).</summary>
     public double? MinRating { get; init; }
 

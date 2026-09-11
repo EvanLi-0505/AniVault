@@ -128,6 +128,8 @@
   "Detail.Status": "状态",
   "Detail.MyRating": "我的评分（0 - 10）",
   "Detail.Favorite": "❤ 收藏",
+  "Detail.ShowOnHome": "🏠 主页显示",
+  "Detail.ShowOnHomeTooltip": "关闭后，该作品不会出现在主页的任何一行（观看中 / 最近添加 / 评分最高）。",
   "Detail.Liked": "\uD83D\uDC4D 喜欢",
   "Detail.TypeFormat": "类型：{0}",
   "Detail.BroadcastFormat": "播出：{0}",

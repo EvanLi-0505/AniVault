@@ -50,12 +50,12 @@
                                    OpenCommand="{Binding OpenMediaCommand}" Margin="0,0,0,20"
                                    Visibility="{Binding HasContinueWatching, Converter={StaticResource BoolToVisibility}}" />
 
-                <controls:MediaRow Header="{loc:Loc Home.RecentlyAdded}" ItemsSource="{Binding RecentlyAdded}"
-                                   OpenCommand="{Binding OpenMediaCommand}" Margin="0,0,0,20" />
-
                 <controls:MediaRow Header="{loc:Loc Home.HighestRated}" ItemsSource="{Binding HighestRated}"
-                                   OpenCommand="{Binding OpenMediaCommand}"
+                                   OpenCommand="{Binding OpenMediaCommand}" Margin="0,0,0,20"
                                    Visibility="{Binding HasHighestRated, Converter={StaticResource BoolToVisibility}}" />
+
+                <controls:MediaRow Header="{loc:Loc Home.RecentlyAdded}" ItemsSource="{Binding RecentlyAdded}"
+                                   OpenCommand="{Binding OpenMediaCommand}" />
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
