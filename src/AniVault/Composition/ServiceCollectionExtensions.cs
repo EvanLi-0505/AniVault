@@ -112,6 +112,7 @@ internal static class ServiceCollectionExtensions
     {
         services.AddSingleton<IRatingCalculatorService, RatingCalculatorService>();
         services.AddSingleton<IRatingGuideService, RatingGuideService>();
+        services.AddSingleton<ICompressArtworkService, CompressArtworkService>();
 
         return services;
     }
@@ -132,6 +133,7 @@ internal static class ServiceCollectionExtensions
         services.AddTransient<CustomProviderViewModel>();
         services.AddTransient<RatingCalculatorViewModel>();
         services.AddTransient<OnlineSearchViewModel>();
+        services.AddTransient<CompressArtworkViewModel>();
         services.AddTransient<PlaceholderViewModel>();
         services.AddTransient<MediaEditorViewModel>();
         services.AddTransient<TagPickerViewModel>();

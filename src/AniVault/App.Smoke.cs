@@ -92,6 +92,12 @@ public partial class App
             Owner = shell,
         });
         await SmokeShowWindowAsync("Rating rubric", () => new RatingGuideWindow { Owner = shell });
+        await SmokeShowWindowAsync("Compress artwork", () =>
+        {
+            var vm = _services!.GetRequiredService<CompressArtworkViewModel>();
+            _ = vm.LoadAsync();
+            return new CompressArtworkWindow { DataContext = vm, Owner = shell };
+        });
 
         // Exercise the themed Calendar / DatePicker drop-down templates in all three display modes.
         await SmokeShowWindowAsync("Calendar", () =>

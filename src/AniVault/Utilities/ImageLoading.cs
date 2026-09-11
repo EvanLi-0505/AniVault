@@ -93,19 +93,25 @@ public static class ImageLoading
         });
     }
 
-    private static bool ExceedsWidth(string path, int maxWidth)
+    /// <summary>
+    /// Reads just the pixel width from an image file's header (no full decode), or null if the
+    /// file is missing/unreadable/not a recognized image format.
+    /// </summary>
+    public static int? TryGetPixelWidth(string path)
     {
         try
         {
             using var stream = File.OpenRead(path);
             var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-            return decoder.Frames[0].PixelWidth > maxWidth;
+            return decoder.Frames[0].PixelWidth;
         }
         catch (Exception)
         {
-            return false;
+            return null;
         }
     }
+
+    private static bool ExceedsWidth(string path, int maxWidth) => TryGetPixelWidth(path) is { } w && w > maxWidth;
 
     private static bool TryWriteDownscaledJpeg(string sourcePath, string destinationPath, int width, int quality)
     {

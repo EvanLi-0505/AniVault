@@ -254,22 +254,21 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - Detail page: backdrop shown as a gradient-scrimmed banner when present.
 - Missing / corrupt / unsupported images fail gracefully ("No poster", warning on bad type).
 - `MediaCardFactory` centralises card creation across Home / library / seasons pages.
-- **Poster/backdrop width cap** — *requested* (perf): the user noticed anime detail pages with a
-  large stored poster opened with a visible ~0.5s pause that movies/TV didn't have. Root cause:
-  a provider's original artwork (e.g. Bangumi's "large" size — one real example was 2898×4096,
-  over 1 MB) was stored and re-read/re-decoded from disk **unshrunk** every time the detail page
-  opened, even though nothing in the app ever displays a poster wider than ~500px or a backdrop
-  wider than ~1280px. `ArtworkService.SetPosterAsync`/`SetBackdropAsync` now cap what's actually
-  written to disk (`ImageLoading.CapWidthAsync`: 900px for posters, 1600px for backdrops — probes
-  the source's natural pixel width first and only re-encodes as JPEG if it's actually over the
-  cap, so a normal-sized manually-picked image is left byte-for-byte unchanged) — this covers both
-  the manual "choose a poster" flow and online-metadata imports (`MetadataImporter` routes through
-  the same `ArtworkService` call). Settings → Data folder → **"Compress oversized artwork"**
-  (`IArtworkService.CompressExistingArtworkAsync`) is a one-time, explicit, opt-in maintenance
-  pass that re-encodes any already-stored poster/backdrop over the cap in place (only replaces a
-  file if the result actually comes out smaller; reports a "compressed N file(s), saved X" summary,
-  or "nothing needed compressing"), for artwork imported before this fix existed. Verified against
-  the user's real data: compressed 31 files, saved ~5.8 MB.
+- **Compress oversized artwork (manual, opt-in only)** — *requested* (perf): investigating a
+  reported ~0.5s pause on some detail pages found the real original artwork (e.g. one real
+  Bangumi "large" cover was 2898×4096, over 1 MB) being re-read/re-decoded from disk unshrunk
+  every time, though nothing in the app ever displays a poster wider than ~500px or a backdrop
+  wider than ~1280px. An earlier pass auto-capped every import to 900px/1600px, but the user
+  asked for downloaded/imported artwork to always keep its original resolution — compression must
+  only ever happen when they explicitly open the tool and pick which files. `ArtworkService`
+  import (`SetPosterAsync`/`SetBackdropAsync`) now **never** shrinks anything; the cap logic moved
+  entirely into two explicit, opt-in operations: `FindOversizedArtworkAsync` (read-only scan for
+  anything wider than the display cap) and `CompressArtworkAsync(selection)` (re-encodes exactly
+  the given poster/backdrop selections, in place, only replacing a file when the result is
+  verifiably smaller). Settings → Data folder → **"Compress oversized artwork"** opens
+  `CompressArtworkWindow`/`CompressArtworkViewModel` — a checklist of every oversized item (title,
+  poster/backdrop, current width, file size), pre-checked but freely toggleable, with Select
+  all/none and a "Compress selected (N)" button; nothing on disk changes just from opening it.
 - **Category-switch artwork relocation** — *fixed*: a side effect found while investigating the
   above — the editor's category override (Milestone: editor category field) changed
   `Media.MediaType` but left the poster/backdrop files sitting in the *old* type's asset folder
@@ -278,14 +277,18 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
   *from the current type*, so those files would silently become impossible to clean up on delete.
   `IArtworkService.RelocateArtworkAsync` now moves the asset folder and rewrites the stored paths;
   `MediaEditorViewModel.Save()` calls it whenever an existing item's category actually changes.
-- **Diagnostic timing logs** — added while investigating a reported "entering 番剧 pauses but
-  电影/剧集 don't" report: `LibraryViewModel.ApplyPage()` logs how long building a page's cards
-  took (isolates pure WPF layout cost — `WrapPanel` is not virtualized, so this scales with how
-  many cards are on the page, a real candidate given Anime currently has far more items than
-  Movies/TV in the reporting user's library), and `ArtworkService.GetPosterThumbnailAsync` logs
-  when it has to regenerate a stale/missing thumbnail (a cold cache after a backup **restore** —
-  restores don't carry the thumbnail cache over — would show up here). Not yet conclusively
-  diagnosed; these logs are the next step to get real numbers instead of guessing further.
+- **"Entering 番剧 pauses but 电影/剧集 don't" — diagnosed, not yet fixed**: added timing logs
+  (`LibraryViewModel.ApplyPage()` logs how long building a page's cards took;
+  `ArtworkService.GetPosterThumbnailAsync` logs when it has to regenerate a stale/missing
+  thumbnail) and got real numbers from the reporting user's own log. Card-building itself is fast
+  (1–9ms even for 47 cards) — the `WrapPanel`-isn't-virtualized theory does **not** hold up against
+  the data. The actual ~400ms hits are thumbnail **regeneration bursts**: a backup restore doesn't
+  carry the thumbnail cache over, so the first page that touches a cold-cache item (often Home,
+  since it pulls from every type) pays to re-decode every one of that burst's full-size source
+  files at once; Anime having the most items in this library means more of a given burst's items
+  tend to be anime, which reads as "anime is slow" even though it's really a one-time cold-cache
+  cost, not something that repeats on later visits. No code change from this yet — not clear a fix
+  is even needed given it's a one-time cost, but worth revisiting if the user reports it recurring.
 
 ### Anime seasons (Phase 7) — *done*
 - `SeasonsViewModel` + `SeasonsView`: left year list, four season tabs with per-year counts,
@@ -326,7 +329,7 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 124 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 128 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, editor category override + save + Anime-field clearing on switch +
   artwork relocation on category switch, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
@@ -334,7 +337,8 @@ explicit button, never automatic — same rule `Metadata/` already follows).
   round-trip + month free-text parsing + tag paging, rating-calculator maths, single-instance
   guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +
   drag-reorder across pages, season mapping + buckets,
-  artwork import/thumbnail/clear/delete + oversized-poster downscale-on-import + folder relocation +
+  artwork import always keeps original resolution + oversized-artwork scan/selective-compress +
+  folder relocation +
   compress-existing-artwork pass, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,

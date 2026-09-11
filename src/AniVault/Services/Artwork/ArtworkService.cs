@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -12,8 +13,16 @@ using Microsoft.Extensions.Logging;
 
 namespace AniVault.Services.Artwork;
 
-/// <summary>Result of a <see cref="IArtworkService.CompressExistingArtworkAsync"/> pass.</summary>
+/// <summary>Result of a <see cref="IArtworkService.CompressArtworkAsync"/> pass.</summary>
 public sealed record ArtworkCompressionResult(int FilesCompressed, long BytesSaved);
+
+/// <summary>
+/// One stored poster or backdrop that's wider than the app ever displays and so is a candidate
+/// to shrink via <see cref="IArtworkService.CompressArtworkAsync"/>. Nothing about the file
+/// changes just because it shows up in a scan — compression only happens for items the user
+/// explicitly selects.
+/// </summary>
+public sealed record OversizedArtworkItem(int MediaId, string Title, bool IsPoster, int PixelWidth, long FileSizeBytes);
 
 /// <summary>
 /// Owns everything about local artwork files: importing a poster / backdrop into a media
@@ -44,13 +53,20 @@ public interface IArtworkService
     string? GetBackdropPath(Media media);
 
     /// <summary>
-    /// Re-encodes every stored poster/backdrop wider than the app's own display cap down to a
-    /// smaller JPEG, in place. A one-time maintenance pass for libraries that accumulated
-    /// oversized artwork before the cap existed on import (or from a provider that serves very
-    /// large originals, e.g. Bangumi) — shrinks disk usage and speeds up opening those items'
-    /// detail pages.
+    /// Scans the whole library for a stored poster/backdrop wider than the app ever displays.
+    /// Read-only — nothing on disk changes just from calling this.
     /// </summary>
-    Task<ArtworkCompressionResult> CompressExistingArtworkAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<OversizedArtworkItem>> FindOversizedArtworkAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Re-encodes exactly the given poster/backdrop selections down to a smaller JPEG, in place
+    /// (only replaces a file if the result actually comes out smaller). Downloaded/imported
+    /// artwork is always kept at its original resolution — this is the only path that ever
+    /// shrinks a stored file, and only for items the user explicitly picked from
+    /// <see cref="FindOversizedArtworkAsync"/>'s results.
+    /// </summary>
+    Task<ArtworkCompressionResult> CompressArtworkAsync(
+        IReadOnlyList<OversizedArtworkItem> selection, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Moves an item's artwork folder from <paramref name="oldType"/>'s asset directory to
@@ -203,15 +219,10 @@ public sealed class ArtworkService : IArtworkService
             TryDelete(existing);
         }
 
-        var maxWidth = isPoster ? MaxPosterWidth : MaxBackdropWidth;
-        var jpegDestination = Path.Combine(assetDir, name + ".jpg");
-        var destination = await ImageLoading.CapWidthAsync(sourceImagePath, jpegDestination, maxWidth);
-        if (destination is null)
-        {
-            destination = Path.Combine(assetDir, name + extension);
-            File.Copy(sourceImagePath, destination, overwrite: true);
-        }
-
+        // Always keep the original resolution here — downscaling only ever happens through
+        // CompressArtworkAsync, and only for files the user explicitly selects there.
+        var destination = Path.Combine(assetDir, name + extension);
+        File.Copy(sourceImagePath, destination, overwrite: true);
         var relative = _paths.ToRelativePath(destination);
 
         if (isPoster)
@@ -274,28 +285,83 @@ public sealed class ArtworkService : IArtworkService
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<ArtworkCompressionResult> CompressExistingArtworkAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<OversizedArtworkItem>> FindOversizedArtworkAsync(CancellationToken cancellationToken = default)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var items = await db.Media
+            .AsNoTracking()
             .Where(m => m.PosterPath != null || m.BackdropPath != null)
+            .Select(m => new { m.Id, m.Title, m.PosterPath, m.BackdropPath })
             .ToListAsync(cancellationToken);
+
+        var results = new List<OversizedArtworkItem>();
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (item.PosterPath is { } posterRelative)
+            {
+                TryAddIfOversized(results, item.Id, item.Title, isPoster: true, posterRelative, MaxPosterWidth);
+            }
+
+            if (item.BackdropPath is { } backdropRelative)
+            {
+                TryAddIfOversized(results, item.Id, item.Title, isPoster: false, backdropRelative, MaxBackdropWidth);
+            }
+        }
+
+        return results;
+    }
+
+    private void TryAddIfOversized(
+        List<OversizedArtworkItem> results, int mediaId, string title, bool isPoster, string relativePath, int maxWidth)
+    {
+        var absolute = _paths.ToAbsolutePath(relativePath);
+        if (!File.Exists(absolute))
+        {
+            return;
+        }
+
+        var width = ImageLoading.TryGetPixelWidth(absolute);
+        if (width is { } w && w > maxWidth)
+        {
+            results.Add(new OversizedArtworkItem(mediaId, title, isPoster, w, new FileInfo(absolute).Length));
+        }
+    }
+
+    public async Task<ArtworkCompressionResult> CompressArtworkAsync(
+        IReadOnlyList<OversizedArtworkItem> selection, CancellationToken cancellationToken = default)
+    {
+        if (selection.Count == 0)
+        {
+            return new ArtworkCompressionResult(0, 0);
+        }
+
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var mediaIds = selection.Select(s => s.MediaId).Distinct().ToList();
+        var mediaById = await db.Media
+            .Where(m => mediaIds.Contains(m.Id))
+            .ToDictionaryAsync(m => m.Id, cancellationToken);
 
         var filesCompressed = 0;
         long bytesSaved = 0;
         var touched = false;
 
-        foreach (var media in items)
+        foreach (var item in selection)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var posterSaved = await CompressFileInPlaceAsync(media, isPoster: true, MaxPosterWidth);
-            var backdropSaved = await CompressFileInPlaceAsync(media, isPoster: false, MaxBackdropWidth);
-
-            if (posterSaved > 0 || backdropSaved > 0)
+            if (!mediaById.TryGetValue(item.MediaId, out var media))
             {
-                filesCompressed += (posterSaved > 0 ? 1 : 0) + (backdropSaved > 0 ? 1 : 0);
-                bytesSaved += posterSaved + backdropSaved;
+                continue;
+            }
+
+            var maxWidth = item.IsPoster ? MaxPosterWidth : MaxBackdropWidth;
+            var saved = await CompressFileInPlaceAsync(media, item.IsPoster, maxWidth);
+            if (saved > 0)
+            {
+                filesCompressed++;
+                bytesSaved += saved;
                 media.UpdatedAt = DateTime.UtcNow;
                 touched = true;
             }
