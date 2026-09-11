@@ -211,6 +211,12 @@
   "Tags.RemovedNone": "没有未使用的标签。",
   "Tags.CreateFailed": "无法创建该标签。",
   "Tags.RenameFailed": "无法重命名该标签。",
+  "Tags.PageFormat": "第 {0} / {1} 页",
+  "Tags.DragHint": "拖动 ⠿ 可调整标签顺序；拖到 ‹ 或 › 上可将其移动到其他页面。",
+  "Tags.DragHandleTooltip": "拖动以调整顺序",
+  "Tags.DragToPagePrevTooltip": "拖住标签停留在此处可跳转到上一页",
+  "Tags.DragToPageNextTooltip": "拖住标签停留在此处可跳转到下一页",
+  "Tags.ReorderFailed": "无法保存新的标签顺序。",
 
   "Seasons.Title": "季度",
   "Seasons.Subtitle": "按番剧的原始播出年份和季度浏览 —— 不是你观看的时间。",

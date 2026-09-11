@@ -19,5 +19,8 @@ public class Tag
     /// </summary>
     public string NormalizedName { get; set; } = string.Empty;
 
+    /// <summary>User-controlled display order (drag-to-reorder on the Tags page); lower sorts first.</summary>
+    public int SortOrder { get; set; }
+
     public List<MediaTag> MediaTags { get; set; } = new();
 }

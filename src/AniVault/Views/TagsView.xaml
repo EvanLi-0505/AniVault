@@ -14,7 +14,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="{loc:Loc Tags.Title}" Style="{StaticResource Text.Heading}" />
@@ -59,26 +61,40 @@
             <Button Grid.Column="2" Content="{loc:Loc Tags.RemoveUnused}" Margin="8,0,0,0" Style="{StaticResource Button.Ghost}" Command="{Binding DeleteUnusedCommand}" />
         </Grid>
 
-        <controls:EmptyState Grid.Row="2" Title="{loc:Loc Tags.EmptyTitle}"
+        <TextBlock Grid.Row="2" Text="{loc:Loc Tags.DragHint}" Style="{StaticResource Text.Muted}"
+                   Margin="0,0,0,8" TextWrapping="Wrap"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}" />
+
+        <controls:EmptyState Grid.Row="3" Title="{loc:Loc Tags.EmptyTitle}"
                              Message="{loc:Loc Tags.EmptyMessage}"
                              Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
 
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto"
                       Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
-            <ItemsControl ItemsSource="{Binding Tags}">
+            <ItemsControl ItemsSource="{Binding VisibleTags}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Style="{StaticResource Card}" Padding="14,10" Margin="0,0,0,8">
+                        <Border Style="{StaticResource Card}" Padding="14,10" Margin="0,0,0,8"
+                                AllowDrop="True"
+                                PreviewMouseLeftButtonDown="OnTagRowPreviewMouseDown"
+                                PreviewMouseMove="OnTagRowPreviewMouseMove"
+                                DragEnter="OnTagRowDragEnter"
+                                DragLeave="OnTagRowDragLeave"
+                                Drop="OnTagRowDrop">
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
+                                <TextBlock Grid.Column="0" Text="⠿" FontSize="15" Opacity="0.5"
+                                           Margin="0,0,10,0" VerticalAlignment="Center"
+                                           Cursor="SizeAll" ToolTip="{loc:Loc Tags.DragHandleTooltip}" />
+                                <StackPanel Grid.Column="1">
                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding UsageLabel}" Style="{StaticResource Text.Muted}" Margin="0,2,0,0" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <StackPanel Grid.Column="2" Orientation="Horizontal">
                                     <Button Content="{loc:Loc Common.Open}" Padding="10,3" FontSize="12" Style="{StaticResource Button.Ghost}"
                                             Command="{Binding DataContext.OpenTagCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}" />
@@ -95,5 +111,18 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
+
+        <!-- Pager: the Prev/Next buttons double as drop zones — hover a dragged tag over one
+             for a moment (without dropping) to page there and keep dragging. -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0"
+                    Visibility="{Binding PagingVisible, Converter={StaticResource BoolToVisibility}}">
+            <Button x:Name="PrevPageButton" Content="‹" Padding="14,4" MinWidth="0" Style="{StaticResource Button.Ghost}"
+                    Command="{Binding PrevPageCommand}" ToolTip="{loc:Loc Tags.DragToPagePrevTooltip}"
+                    AllowDrop="True" DragEnter="OnPagerDragEnter" DragLeave="OnPagerDragLeave" Drop="OnPagerDrop" />
+            <TextBlock Text="{Binding PageLabel}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" Margin="14,0" />
+            <Button x:Name="NextPageButton" Content="›" Padding="14,4" MinWidth="0" Style="{StaticResource Button.Ghost}"
+                    Command="{Binding NextPageCommand}" ToolTip="{loc:Loc Tags.DragToPageNextTooltip}"
+                    AllowDrop="True" DragEnter="OnPagerDragEnter" DragLeave="OnPagerDragLeave" Drop="OnPagerDrop" />
+        </StackPanel>
     </Grid>
 </UserControl>

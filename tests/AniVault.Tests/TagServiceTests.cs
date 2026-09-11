@@ -88,4 +88,51 @@ public class TagServiceTests
         Assert.Equal(2, usage.Single(t => t.Name == "Shared").MediaCount);
         Assert.Equal(1, usage.Single(t => t.Name == "Solo").MediaCount);
     }
+
+    [Fact]
+    public async Task GetAllWithUsage_Is_Ordered_By_Creation_By_Default()
+    {
+        using var db = new TestDatabase();
+        var tagService = new TagService(db);
+
+        await tagService.GetOrCreateAsync("Zeta");
+        await tagService.GetOrCreateAsync("Alpha");
+        await tagService.GetOrCreateAsync("Mu");
+
+        var order = (await tagService.GetAllWithUsageAsync()).Select(t => t.Name).ToArray();
+
+        Assert.Equal(new[] { "Zeta", "Alpha", "Mu" }, order);
+    }
+
+    [Fact]
+    public async Task ReorderAsync_Rewrites_SortOrder_To_Match_The_Given_Sequence()
+    {
+        using var db = new TestDatabase();
+        var tagService = new TagService(db);
+
+        var a = await tagService.GetOrCreateAsync("A");
+        var b = await tagService.GetOrCreateAsync("B");
+        var c = await tagService.GetOrCreateAsync("C");
+
+        await tagService.ReorderAsync(new[] { c.Id, a.Id, b.Id });
+
+        var order = (await tagService.GetAllWithUsageAsync()).Select(t => t.Name).ToArray();
+        Assert.Equal(new[] { "C", "A", "B" }, order);
+    }
+
+    [Fact]
+    public async Task A_Newly_Created_Tag_Is_Appended_After_A_Reorder()
+    {
+        using var db = new TestDatabase();
+        var tagService = new TagService(db);
+
+        var a = await tagService.GetOrCreateAsync("A");
+        var b = await tagService.GetOrCreateAsync("B");
+        await tagService.ReorderAsync(new[] { b.Id, a.Id });
+
+        await tagService.GetOrCreateAsync("C");
+
+        var order = (await tagService.GetAllWithUsageAsync()).Select(t => t.Name).ToArray();
+        Assert.Equal(new[] { "B", "A", "C" }, order);
+    }
 }

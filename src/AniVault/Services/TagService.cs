@@ -32,6 +32,12 @@ public interface ITagService
 
     /// <summary>Replaces a media item's tag set with exactly <paramref name="tagNames"/> (created as needed).</summary>
     Task SetMediaTagsAsync(int mediaId, IEnumerable<string> tagNames, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Rewrites every listed tag's <see cref="Tag.SortOrder"/> to match its position in
+    /// <paramref name="orderedTagIds"/> (0-based). Drives the Tags page's drag-to-reorder.
+    /// </summary>
+    Task ReorderAsync(IReadOnlyList<int> orderedTagIds, CancellationToken cancellationToken = default);
 }
 
 public sealed class TagService : ITagService
@@ -50,7 +56,8 @@ public sealed class TagService : ITagService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await db.Tags
             .AsNoTracking()
-            .OrderBy(t => t.Name)
+            .OrderBy(t => t.SortOrder)
+            .ThenBy(t => t.Id)
             .Select(t => new TagUsage(t.Id, t.Name, t.MediaTags.Count))
             .ToListAsync(cancellationToken);
     }
@@ -152,6 +159,24 @@ public sealed class TagService : ITagService
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task ReorderAsync(IReadOnlyList<int> orderedTagIds, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var tags = await db.Tags
+            .Where(t => orderedTagIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, cancellationToken);
+
+        for (var i = 0; i < orderedTagIds.Count; i++)
+        {
+            if (tags.TryGetValue(orderedTagIds[i], out var tag))
+            {
+                tag.SortOrder = i;
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     private static async Task<Tag> GetOrCreateInContextAsync(AppDbContext db, string name, CancellationToken cancellationToken)
     {
         var trimmed = name.Trim();
@@ -163,8 +188,25 @@ public sealed class TagService : ITagService
             return existing;
         }
 
-        var created = new Tag { Name = trimmed, NormalizedName = normalized };
+        var created = new Tag { Name = trimmed, NormalizedName = normalized, SortOrder = await NextSortOrderAsync(db, cancellationToken) };
         db.Tags.Add(created);
         return created;
+    }
+
+    /// <summary>
+    /// One past the highest <see cref="Tag.SortOrder"/> currently in play, so a newly-created
+    /// tag lands at the end of the user's arrangement. Looks at both saved rows and tags already
+    /// added-but-unsaved in this same context (e.g. mid-way through a multi-tag <see cref="SetMediaTagsAsync"/> call).
+    /// </summary>
+    private static async Task<int> NextSortOrderAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        var maxSaved = await db.Tags.Select(t => (int?)t.SortOrder).MaxAsync(cancellationToken) ?? -1;
+        var maxPending = db.ChangeTracker.Entries<Tag>()
+            .Where(e => e.State == EntityState.Added)
+            .Select(e => (int?)e.Entity.SortOrder)
+            .DefaultIfEmpty(null)
+            .Max() ?? -1;
+
+        return Math.Max(maxSaved, maxPending) + 1;
     }
 }

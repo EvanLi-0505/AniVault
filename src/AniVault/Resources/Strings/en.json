@@ -211,6 +211,12 @@
   "Tags.RemovedNone": "There were no unused tags.",
   "Tags.CreateFailed": "Could not create that tag.",
   "Tags.RenameFailed": "Could not rename that tag.",
+  "Tags.PageFormat": "Page {0} / {1}",
+  "Tags.DragHint": "Drag ⠿ to reorder a tag; drag it onto ‹ or › to move it to another page.",
+  "Tags.DragHandleTooltip": "Drag to reorder",
+  "Tags.DragToPagePrevTooltip": "Hold a dragged tag here to go to the previous page",
+  "Tags.DragToPageNextTooltip": "Hold a dragged tag here to go to the next page",
+  "Tags.ReorderFailed": "Could not save the new tag order.",
 
   "Seasons.Title": "Seasons",
   "Seasons.Subtitle": "Anime by original broadcast year and season — not when you watched it.",

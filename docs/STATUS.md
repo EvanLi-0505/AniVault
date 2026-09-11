@@ -97,6 +97,27 @@
 - Sidebar wired up: each **status**, **Favorites**, **Liked**, **My Rating** and **Search** are now
   real filtered library views (were placeholders).
 
+### Tags page: pagination + drag-to-reorder — *requested*
+- The Tags page now paginates at **20 per page** (same ‹ / › pager pattern as the library and the
+  filter panel's tag list). `TagsViewModel` keeps the full `Tags` list plus a windowed
+  `VisibleTags` for the current page.
+- Every row has a ⠿ drag handle; dragging it to another row (same page or a different one)
+  reorders the tag and persists immediately. The order is fully user-controlled — not
+  alphabetical — and new tags are always appended at the end. Backed by `Tag.SortOrder`
+  (migration `AddTagSortOrder`; existing installs are backfilled in the same alphabetical order
+  they already had, so upgrading doesn't visibly reshuffle anything until a tag is actually
+  dragged) and `ITagService.ReorderAsync`.
+- **Cross-page dragging**: hovering a dragged tag over the ‹ / › pager button for ~0.6s turns the
+  page without ending the drag (OLE drag-drop still pumps window messages, so a `DispatcherTimer`
+  keeps ticking during the drag), so a tag can be dragged from page 2 onto page 1 and back.
+  `TagsView.xaml.cs` implements this with the standard WPF click-vs-drag threshold pattern
+  (`PreviewMouseLeftButtonDown`/`PreviewMouseMove` + `DragDrop.DoDragDrop`), so the row's own
+  Open/Rename/Delete buttons remain clickable.
+- The same order is used everywhere tags are listed — `FilterPanelViewModel` (the library's tag
+  filter chips) and `TagPickerViewModel` (the editor's tag suggestions) both read
+  `ITagService.GetAllWithUsageAsync()`, which now orders by `SortOrder` — so arranging tags on the
+  Tags page is immediately reflected in the library filter panel, with no separate wiring needed.
+
 ### Online metadata search — discoverability
 - The library header "🌐 Search online" button is now always shown on the Anime / Movies /
   TV Series pages (it was hidden entirely until `network.onlineSearchEnabled` was on, so users
@@ -261,12 +282,13 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 108 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 116 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
   round-trip + month free-text parsing + tag paging, rating-calculator maths, single-instance
-  guard, tag service, season mapping + buckets,
+  guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +
+  drag-reorder across pages, season mapping + buckets,
   artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
