@@ -39,6 +39,37 @@ public class FilterPanelViewModelTests
     }
 
     [Fact]
+    public async Task Month_Has_Quarterly_Presets_And_Accepts_Free_Typed_Text()
+    {
+        using var db = new TestDatabase();
+        var vm = Create(db);
+        await vm.LoadOptionsAsync(null);
+
+        // presets: All + 1/4/7/10
+        Assert.Equal(5, vm.MonthOptions.Count);
+        Assert.Null(vm.Month);
+
+        // picking a preset (ComboBox sets Text to the item string when editable)
+        vm.MonthText = vm.MonthOptions[2];   // "4..."
+        Assert.Equal(4, vm.Month);
+
+        // typing an arbitrary month the presets don't cover
+        vm.MonthText = "3";
+        Assert.Equal(3, vm.Month);
+
+        // garbage / out-of-range text just means "no filter"
+        vm.MonthText = "13";
+        Assert.Null(vm.Month);
+        vm.MonthText = "abc";
+        Assert.Null(vm.Month);
+
+        // back to "All"
+        vm.MonthText = vm.MonthOptions[0];
+        Assert.Null(vm.Month);
+        Assert.False(vm.HasActiveFilters);
+    }
+
+    [Fact]
     public async Task Status_And_Season_Round_Trip_Through_Null()
     {
         using var db = new TestDatabase();

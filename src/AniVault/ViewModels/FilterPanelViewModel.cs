@@ -71,6 +71,7 @@ public sealed partial class FilterPanelViewModel : ObservableObject
     [ObservableProperty] private FilterChoice<WatchStatus> _statusChoice = null!;
     [ObservableProperty] private FilterChoice<int> _yearChoice = null!;
     [ObservableProperty] private FilterChoice<AnimeSeason> _seasonChoice = null!;
+    [ObservableProperty] private string _monthText = string.Empty;
     [ObservableProperty] private bool _favoriteOnly;
     [ObservableProperty] private bool _likedOnly;
     [ObservableProperty] private double? _minRating;
@@ -107,9 +108,14 @@ public sealed partial class FilterPanelViewModel : ObservableObject
 
         YearOptions = new ObservableCollection<FilterChoice<int>> { new(null, _loc.Text("Common.Any")) };
 
+        MonthOptions = new ObservableCollection<string>(
+            new[] { _loc.Text("Common.Any") }
+                .Concat(new[] { 1, 4, 7, 10 }.Select(m => _loc.Format("Filter.MonthFormat", m))));
+
         StatusChoice = StatusOptions[0];
         SeasonChoice = SeasonOptions[0];
         YearChoice = YearOptions[0];
+        MonthText = MonthOptions[0];
 
         _suspend = false;
     }
@@ -132,6 +138,9 @@ public sealed partial class FilterPanelViewModel : ObservableObject
     public ObservableCollection<FilterChoice<AnimeSeason>> SeasonOptions { get; }
 
     public ObservableCollection<FilterChoice<int>> YearOptions { get; }
+
+    /// <summary>Preset choices for the editable month box (quarterly anime premiere months).</summary>
+    public ObservableCollection<string> MonthOptions { get; }
 
     public ObservableCollection<TagFilterOption> Tags { get; } = new();
 
@@ -160,13 +169,32 @@ public sealed partial class FilterPanelViewModel : ObservableObject
         set => SeasonChoice = SeasonOptions.FirstOrDefault(c => Nullable.Equals(c.Value, value)) ?? SeasonOptions[0];
     }
 
+    /// <summary>The broadcast/release month (1-12) typed or picked in <see cref="MonthText"/>, or null.</summary>
+    public int? Month
+    {
+        get => ParseMonth(MonthText);
+        set => MonthText = value is { } m ? _loc.Format("Filter.MonthFormat", m) : MonthOptions[0];
+    }
+
     public int SelectedTagCount => Tags.Count(t => t.IsSelected);
 
     public string TagPageLabel => _loc.Format("Filter.PageFormat", TagPage, TagTotalPages);
 
     public bool HasActiveFilters =>
         !string.IsNullOrWhiteSpace(Text) || Status is not null || Year is not null || Season is not null
-        || FavoriteOnly || LikedOnly || MinRating is not null || Tags.Any(t => t.IsSelected);
+        || Month is not null || FavoriteOnly || LikedOnly || MinRating is not null || Tags.Any(t => t.IsSelected);
+
+    /// <summary>Pulls the first 1-12 number out of free-typed text ("4月", "Month 4", "4" all work).</summary>
+    private static int? ParseMonth(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var digits = new string(text.Where(char.IsAsciiDigit).ToArray());
+        return int.TryParse(digits, out var month) && month is >= 1 and <= 12 ? month : null;
+    }
 
     public async Task LoadOptionsAsync(MediaType? mediaType)
     {
@@ -205,6 +233,7 @@ public sealed partial class FilterPanelViewModel : ObservableObject
         Status = Status,
         Year = Year,
         Season = Season,
+        Month = Month,
         IsFavorite = FavoriteOnly ? true : null,
         IsLiked = LikedOnly ? true : null,
         MinRating = MinRating,
@@ -224,6 +253,7 @@ public sealed partial class FilterPanelViewModel : ObservableObject
         StatusChoice = StatusOptions[0];
         YearChoice = YearOptions[0];
         SeasonChoice = SeasonOptions[0];
+        MonthText = MonthOptions[0];
         FavoriteOnly = false;
         LikedOnly = false;
         MinRating = null;
@@ -291,6 +321,12 @@ public sealed partial class FilterPanelViewModel : ObservableObject
     partial void OnSeasonChoiceChanged(FilterChoice<AnimeSeason> value)
     {
         OnPropertyChanged(nameof(Season));
+        RaiseChanged();
+    }
+
+    partial void OnMonthTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(Month));
         RaiseChanged();
     }
 

@@ -84,9 +84,13 @@
 - Tag editor component (`TagPickerViewModel`) in the media editor; clickable tag chips on the detail page.
 - **Tags page**: every tag with usage count; rename, delete, remove unused, open as a filtered view.
 - `MediaQueryService` + `MediaFilter` / `MediaSortOption`: one place translates combined filters
-  (type, text incl. tag names, status, year, season, favorite, liked, min rating, tags any/all) + sort
-  (title, my rating, broadcast/added/updated/completed date, episode count, asc/desc).
-- Shared `FilterPanel` control on every browse surface.
+  (type, text incl. tag names, status, year, season, **month**, favorite, liked, min rating, tags
+  any/all) + sort (title, my rating, broadcast/added/updated/completed date, episode count, asc/desc).
+- Shared `FilterPanel` control on every browse surface. The Month box is an editable combo:
+  quarterly-premiere presets (1/4/7/10) plus free-typed text ("3", "12月", …) — any 1-12 value
+  works, not just the four preset months. Backed by `Media.AirMonth` (`int?`, migration
+  `AddAirMonth`), settable in the editor and set from a provider's `StartDate` on import/refresh
+  (provider-owned, like `AirYear`/`AirSeason`).
 - Sidebar wired up: each **status**, **Favorites**, **Liked**, **My Rating** and **Search** are now
   real filtered library views (were placeholders).
 
@@ -203,10 +207,11 @@
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 96 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 98 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, episode sync/watched/rating clamp/completed-stamp, backup round-trip,
-  Markdown export, combined query filters + sort, filter-panel choice round-trip + tag paging,
-  rating-calculator maths, single-instance guard, tag service, season mapping + buckets,
+  Markdown export, combined query filters + sort incl. month, filter-panel choice round-trip +
+  month free-text parsing + tag paging, rating-calculator maths, single-instance guard, tag
+  service, season mapping + buckets,
   artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
@@ -216,6 +221,9 @@
   custom-provider / rating-questionnaire / rating-rubric windows and a themed `Calendar`, with
   zero exceptions, zero binding errors, and **zero network requests**.
 - Manually verified: a second `AniVault.exe` launch exits in ~1 s and the first stays running.
+- Manually verified: a data folder on the previous schema (`InitialCreate` only) upgrades
+  cleanly on next launch — only `AddAirMonth` applies, the pre-existing row survives with
+  `AirMonth = NULL`, no data loss.
 - Published single-file exe + installed exe: launch offline, migrate, show the dark UI.
 
 ## Not implemented yet

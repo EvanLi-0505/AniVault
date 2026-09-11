@@ -59,6 +59,9 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
     private AnimeSeason? _airSeason;
 
     [ObservableProperty]
+    private int? _airMonth;
+
+    [ObservableProperty]
     private DateTime? _startDate;
 
     [ObservableProperty]
@@ -166,6 +169,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
         Description = media.Description;
         AirYear = media.AirYear;
         AirSeason = media.AirSeason;
+        AirMonth = media.AirMonth;
         StartDate = ToDateTime(media.StartDate);
         EndDate = ToDateTime(media.EndDate);
         EpisodeCount = media.EpisodeCount;
@@ -249,6 +253,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
             media.Description = Trimmed(Description);
             media.AirYear = AirYear;
             media.AirSeason = MediaType == MediaType.Anime ? AirSeason : null;
+            media.AirMonth = AirMonth is >= 1 and <= 12 ? AirMonth : null;
             media.StartDate = ToDateOnly(StartDate);
             media.EndDate = ToDateOnly(EndDate);
             media.EpisodeCount = EpisodeCount;

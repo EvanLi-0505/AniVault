@@ -44,6 +44,9 @@ public class Media
     /// <summary>Original broadcast season (anime only). Not the month the user watched it.</summary>
     public AnimeSeason? AirSeason { get; set; }
 
+    /// <summary>Broadcast / release month (1-12), if known. More precise than <see cref="AirSeason"/>.</summary>
+    public int? AirMonth { get; set; }
+
     /// <summary>Total number of episodes, if known. Movies are typically null or 1.</summary>
     public int? EpisodeCount { get; set; }
 

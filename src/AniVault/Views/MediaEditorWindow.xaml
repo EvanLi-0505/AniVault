@@ -50,6 +50,8 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
@@ -57,7 +59,12 @@
                         <TextBox Text="{Binding AirYear, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2" Visibility="{Binding ShowAnimeFields, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{loc:Loc Editor.Month}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding AirMonth, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4" Visibility="{Binding ShowAnimeFields, Converter={StaticResource BoolToVisibility}}">
                         <TextBlock Text="{loc:Loc Editor.Season}" Style="{StaticResource FieldLabel}" />
                         <ComboBox ItemsSource="{Binding AnimeSeasonOptions}" SelectedItem="{Binding AirSeason}">
                             <ComboBox.ItemTemplate>
@@ -68,7 +75,7 @@
                         </ComboBox>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="4">
+                    <StackPanel Grid.Column="6">
                         <TextBlock Text="{loc:Loc Editor.Episodes}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding EpisodeCount, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                     </StackPanel>

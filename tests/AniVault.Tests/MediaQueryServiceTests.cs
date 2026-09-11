@@ -16,7 +16,7 @@ public class MediaQueryServiceTests
         var frieren = new Media
         {
             MediaType = MediaType.Anime, Title = "Frieren", Status = WatchStatus.Completed,
-            AirYear = 2023, AirSeason = AnimeSeason.Fall, MyRating = 9.5, IsFavorite = true,
+            AirYear = 2023, AirSeason = AnimeSeason.Fall, AirMonth = 9, MyRating = 9.5, IsFavorite = true,
         };
         frieren.MediaTags.Add(new MediaTag { Tag = fantasy });
         frieren.MediaTags.Add(new MediaTag { Tag = drama });
@@ -24,7 +24,7 @@ public class MediaQueryServiceTests
         var vinland = new Media
         {
             MediaType = MediaType.Anime, Title = "Vinland Saga", Status = WatchStatus.Watching,
-            AirYear = 2019, AirSeason = AnimeSeason.Summer, MyRating = 8.0,
+            AirYear = 2019, AirSeason = AnimeSeason.Summer, AirMonth = 7, MyRating = 8.0,
         };
         vinland.MediaTags.Add(new MediaTag { Tag = drama });
 
@@ -58,6 +58,24 @@ public class MediaQueryServiceTests
 
         Assert.Single(result);
         Assert.Equal("Frieren", result[0].Title);
+    }
+
+    [Fact]
+    public async Task Month_Filter_Matches_AirMonth_Independent_Of_Season()
+    {
+        using var db = new TestDatabase();
+        await SeedAsync(db);
+        var service = new MediaQueryService(db);
+
+        var september = await service.QueryAsync(new MediaFilter { Month = 9 }, MediaSortOption.Default);
+        var july = await service.QueryAsync(new MediaFilter { Month = 7 }, MediaSortOption.Default);
+        var december = await service.QueryAsync(new MediaFilter { Month = 12 }, MediaSortOption.Default);
+
+        Assert.Single(september);
+        Assert.Equal("Frieren", september[0].Title);
+        Assert.Single(july);
+        Assert.Equal("Vinland Saga", july[0].Title);
+        Assert.Empty(december);
     }
 
     [Fact]

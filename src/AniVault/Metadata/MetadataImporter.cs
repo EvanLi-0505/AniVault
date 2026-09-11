@@ -164,6 +164,7 @@ public sealed class MetadataImporter : IMetadataImporter
         media.EndDate = metadata.EndDate ?? media.EndDate;
         media.AirYear = metadata.AirYear ?? media.AirYear;
         media.AirSeason = metadata.MediaType == MediaType.Anime ? metadata.AirSeason ?? media.AirSeason : media.AirSeason;
+        media.AirMonth = metadata.StartDate?.Month ?? media.AirMonth;
         media.EpisodeCount = metadata.EpisodeCount ?? media.EpisodeCount;
         media.RuntimeMinutes = metadata.RuntimeMinutes ?? media.RuntimeMinutes;
         media.Country = Nullify(metadata.Country) ?? media.Country;

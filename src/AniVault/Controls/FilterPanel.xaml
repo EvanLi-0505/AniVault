@@ -53,6 +53,14 @@
                 </StackPanel>
 
                 <StackPanel Margin="0,0,12,8">
+                    <TextBlock Text="{loc:Loc Filter.Month}" Style="{StaticResource Text.Muted}" />
+                    <ComboBox Width="130" IsEditable="True" StaysOpenOnEdit="True"
+                              Text="{Binding MonthText, UpdateSourceTrigger=PropertyChanged}"
+                              ItemsSource="{Binding MonthOptions}"
+                              ToolTip="{loc:Loc Filter.MonthPlaceholder}" />
+                </StackPanel>
+
+                <StackPanel Margin="0,0,12,8">
                     <TextBlock Text="{loc:Loc Filter.MinRating}" Style="{StaticResource Text.Muted}" />
                     <TextBox Width="70" Text="{Binding MinRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
                 </StackPanel>

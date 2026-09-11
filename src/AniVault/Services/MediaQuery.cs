@@ -21,6 +21,9 @@ public sealed record MediaFilter
 
     public AnimeSeason? Season { get; init; }
 
+    /// <summary>Broadcast / release month (1-12).</summary>
+    public int? Month { get; init; }
+
     public bool? IsFavorite { get; init; }
 
     public bool? IsLiked { get; init; }
@@ -40,6 +43,7 @@ public sealed record MediaFilter
         || Status is not null
         || Year is not null
         || Season is not null
+        || Month is not null
         || IsFavorite is not null
         || IsLiked is not null
         || MinRating is not null

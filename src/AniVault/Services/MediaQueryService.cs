@@ -84,6 +84,11 @@ public sealed class MediaQueryService : IMediaQueryService
             query = query.Where(m => m.AirSeason == season);
         }
 
+        if (filter.Month is { } month)
+        {
+            query = query.Where(m => m.AirMonth == month);
+        }
+
         if (filter.IsFavorite is { } fav)
         {
             query = query.Where(m => m.IsFavorite == fav);
