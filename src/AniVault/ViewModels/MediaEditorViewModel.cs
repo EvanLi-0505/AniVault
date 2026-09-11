@@ -127,6 +127,14 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
     public IReadOnlyList<WatchStatus> WatchStatusOptions { get; } =
         Enum.GetValues<WatchStatus>();
 
+    /// <summary>
+    /// Every category, always editable. A metadata provider's own category guess can be wrong
+    /// (e.g. Bangumi's "real" subject type covers both live-action movies and TV dramas, so an
+    /// imported movie can land here typed as a TV series) — this lets the user correct it by hand
+    /// instead of being stuck with whatever the provider decided.
+    /// </summary>
+    public IReadOnlyList<MediaType> MediaTypeOptions { get; } = Enum.GetValues<MediaType>();
+
     public IReadOnlyList<AnimeSeason?> AnimeSeasonOptions { get; } =
         new AnimeSeason?[] { null }.Concat(Enum.GetValues<AnimeSeason>().Cast<AnimeSeason?>()).ToList();
 

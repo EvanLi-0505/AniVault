@@ -162,6 +162,8 @@
   "Editor.EditFormat": "编辑{0}",
   "Editor.TitleRequired": "标题为必填项。",
   "Editor.TitleField": "标题 *",
+  "Editor.Category": "品类",
+  "Editor.CategoryHint": "如果导入的元数据分类不对（比如电影被误放进了剧集），可以在这里手动更正——这个值不会自己再变回去。",
   "Editor.OriginalTitle": "原名",
   "Editor.AltTitles": "别名（每行一个）",
   "Editor.Description": "简介",

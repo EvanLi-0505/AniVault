@@ -162,6 +162,8 @@
   "Editor.EditFormat": "Edit {0}",
   "Editor.TitleRequired": "Title is required.",
   "Editor.TitleField": "Title *",
+  "Editor.Category": "Category",
+  "Editor.CategoryHint": "If metadata import got this wrong (e.g. a movie landing in TV Series), fix it here — this never changes on its own.",
   "Editor.OriginalTitle": "Original title",
   "Editor.AltTitles": "Alternative titles (one per line)",
   "Editor.Description": "Description",

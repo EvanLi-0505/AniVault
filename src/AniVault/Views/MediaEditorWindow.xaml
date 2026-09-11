@@ -34,6 +34,16 @@
                 <TextBlock Text="{loc:Loc Editor.TitleField}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
                 <TextBox Text="{Binding TitleText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" />
 
+                <TextBlock Text="{loc:Loc Editor.Category}" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding MediaTypeOptions}" SelectedItem="{Binding MediaType}" HorizontalAlignment="Left" MinWidth="160">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Text="{loc:Loc Editor.CategoryHint}" Style="{StaticResource Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
+
                 <TextBlock Text="{loc:Loc Editor.OriginalTitle}" Style="{StaticResource FieldLabel}" />
                 <TextBox Text="{Binding OriginalTitle}" />
 

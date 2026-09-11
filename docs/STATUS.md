@@ -27,6 +27,14 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - Anime / Movies / TV Series library pages (shared `LibraryViewModel`) with local text search.
 - **Media detail page**: full metadata, quick status / rating / favorite / liked changes,
   official-website launch (opens the normal browser), edit & delete.
+- **Editor category override** — *requested*: the editor's "Category" field (Anime / Movie / TV
+  Series) is always editable, not just set once on creation. A manual safety net for when a
+  metadata provider's own type guess is wrong — Bangumi's "real" (live-action) subject type
+  covers both movies and TV dramas, and `GetDetailsAsync` has no way to know which the user
+  meant, so it always falls back to TV Series; an imported movie could silently land in the
+  wrong library. Switching category here re-applies the same clearing rules `Save()` already had
+  (e.g. leaving Anime drops the season field), it's just now reachable from the UI instead of
+  only settable once at creation.
 
 ### Episodes (Phase 5, partial)
 - Detail page episode checklist; "Create episode list" from the episode count.
@@ -286,8 +294,9 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 116 passing (schema/migrations, cascade delete, unique
-  constraints, media CRUD, `ShowOnHome` default/persist/recently-added-exclusion, episode
+- `dotnet test AniVault.slnx` — 119 passing (schema/migrations, cascade delete, unique
+  constraints, media CRUD, editor category override + save + Anime-field clearing on switch,
+  `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
   round-trip + month free-text parsing + tag paging, rating-calculator maths, single-instance
