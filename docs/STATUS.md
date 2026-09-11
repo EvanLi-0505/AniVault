@@ -277,18 +277,24 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
   *from the current type*, so those files would silently become impossible to clean up on delete.
   `IArtworkService.RelocateArtworkAsync` now moves the asset folder and rewrites the stored paths;
   `MediaEditorViewModel.Save()` calls it whenever an existing item's category actually changes.
-- **"Entering 番剧 pauses but 电影/剧集 don't" — diagnosed, not yet fixed**: added timing logs
-  (`LibraryViewModel.ApplyPage()` logs how long building a page's cards took;
-  `ArtworkService.GetPosterThumbnailAsync` logs when it has to regenerate a stale/missing
-  thumbnail) and got real numbers from the reporting user's own log. Card-building itself is fast
-  (1–9ms even for 47 cards) — the `WrapPanel`-isn't-virtualized theory does **not** hold up against
-  the data. The actual ~400ms hits are thumbnail **regeneration bursts**: a backup restore doesn't
-  carry the thumbnail cache over, so the first page that touches a cold-cache item (often Home,
-  since it pulls from every type) pays to re-decode every one of that burst's full-size source
-  files at once; Anime having the most items in this library means more of a given burst's items
-  tend to be anime, which reads as "anime is slow" even though it's really a one-time cold-cache
-  cost, not something that repeats on later visits. No code change from this yet — not clear a fix
-  is even needed given it's a one-time cost, but worth revisiting if the user reports it recurring.
+- **"Entering 番剧 pauses but 电影/剧集 don't" — still under investigation**: round 1 found and
+  ruled out the cold-cache thumbnail-regeneration bursts as the *sole* cause (real, but only a
+  one-time cost right after a backup restore — see the log evidence, still valid). The user then
+  reported the pause persists even on a warm cache, which the `ApplyPage()` "Built N card(s)"
+  timing (1–9ms) can't explain either — that number only covers creating the card view models and
+  enqueuing them into the `ObservableCollection`; WPF's actual Measure/Arrange/Render pass for the
+  (non-virtualized) `WrapPanel` runs later, asynchronously, on the dispatcher, so it was never
+  actually measured. Added a second log line to close that gap: a continuation scheduled at
+  `DispatcherPriority.Render` right after the cards are enqueued, logging "Rendered N card(s)...
+  (containers + layout + render)" once WPF's layout pass has actually caught up — this is the
+  number that should reflect what the user perceives. Also timed `FilterPanelViewModel`'s tag-list
+  reload (`Filters.LoadOptionsAsync`, which reloads every tag on every library navigation
+  regardless of type — a previously uninstrumented, category-agnostic candidate). Waiting on the
+  user's next `app.log` to see which of these two numbers actually correlates with the reported
+  lag before deciding on a fix (a smaller page size is the safe, low-risk mitigation if render
+  time turns out to be the real cost; a hand-written virtualizing wrap panel — WPF has none built
+  in — would be the fuller fix but is enough surface area, and impossible to verify visually from
+  here, that it shouldn't be attempted on a guess).
 
 ### Anime seasons (Phase 7) — *done*
 - `SeasonsViewModel` + `SeasonsView`: left year list, four season tabs with per-year counts,

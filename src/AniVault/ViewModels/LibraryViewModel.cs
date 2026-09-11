@@ -157,7 +157,13 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public override async Task LoadAsync()
     {
         OnlineSearchEnabled = await _settings.GetBoolAsync(SettingKeys.OnlineSearchEnabled, false);
+
+        var filterSw = Stopwatch.StartNew();
         await Filters.LoadOptionsAsync(_preset.MediaType);
+        filterSw.Stop();
+        _logger.LogInformation(
+            "Loaded filter options ({TagCount} tag(s)) for '{Title}' in {ElapsedMs} ms.",
+            Filters.Tags.Count, Title, filterSw.ElapsedMilliseconds);
 
         if (_preset.TagId is { } tagId)
         {
@@ -344,7 +350,21 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
         sw.Stop();
         _logger.LogInformation(
-            "Built {Count} card(s) for '{Title}' in {ElapsedMs} ms.", Items.Count, Title, sw.ElapsedMilliseconds);
+            "Built {Count} card(s) for '{Title}' in {ElapsedMs} ms (containers only, before layout/render).",
+            Items.Count, Title, sw.ElapsedMilliseconds);
+
+        // The line above only times how long it took to create and enqueue the card view models —
+        // WPF's actual Measure/Arrange/Render pass for the WrapPanel runs later, asynchronously,
+        // on the dispatcher. Schedule a continuation at Render priority (after layout, before the
+        // UI goes idle) so we can see whether THAT pass is where the reported pause actually is.
+        var renderSw = Stopwatch.StartNew();
+        var renderedCount = Items.Count;
+        var renderedTitle = Title;
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Render,
+            new Action(() => _logger.LogInformation(
+                "Rendered {Count} card(s) for '{Title}' in {ElapsedMs} ms (containers + layout + render).",
+                renderedCount, renderedTitle, renderSw.ElapsedMilliseconds)));
 
         IsEmpty = _pageSource.Count == 0;
         UpdateHeaderCount();
