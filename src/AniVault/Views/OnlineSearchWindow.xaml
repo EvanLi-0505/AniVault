@@ -48,10 +48,19 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="4">
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Online.MultiSelectHint}" Style="{StaticResource Text.Muted}"
+                           TextWrapping="Wrap" Margin="4,0,4,6" />
+                <Border Style="{StaticResource Card}" Padding="4">
                 <ListBox ItemsSource="{Binding Results}" SelectedItem="{Binding SelectedResult}"
+                         SelectionMode="Extended"
                          Background="Transparent" BorderThickness="0"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="4">
@@ -73,7 +82,8 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-            </Border>
+                </Border>
+            </DockPanel>
 
             <Grid Grid.Column="1" Margin="16,0,0,0">
                 <TextBlock Text="{loc:Loc Online.SelectToPreview}" Style="{StaticResource Text.Muted}"
@@ -121,7 +131,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Button Content="{loc:Loc Online.AddToLibrary}" HorizontalAlignment="Left" Margin="0,16,0,0"
+                        <Button Content="{Binding AddButtonLabel}" HorizontalAlignment="Left" Margin="0,16,0,0"
                                 Style="{StaticResource Button.Primary}" Command="{Binding AddToLibraryCommand}" />
                     </StackPanel>
                 </ScrollViewer>

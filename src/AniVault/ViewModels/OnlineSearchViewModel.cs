@@ -15,15 +15,32 @@ using Microsoft.Extensions.Logging;
 namespace AniVault.ViewModels;
 
 /// <summary>A provider option in the online-search picker.</summary>
-public sealed record ProviderChoice(ExternalSource Source, string DisplayName, bool IsReady, string Description);
-
-/// <summary>One online search result row.</summary>
-public sealed class OnlineResultViewModel
+public sealed record ProviderChoice(ExternalSource Source, string DisplayName, bool IsReady, string Description)
 {
-    public OnlineResultViewModel(MetadataSearchResult result)
+    // The themed ComboBox's closed-state content presenter falls back to ToString() when the
+    // framework hands it the raw item instead of a DisplayMemberPath-derived template (seen with
+    // this exact ComboBox template — see FilterChoice<T> for the same fix). Without this a record's
+    // auto-generated ToString() ("ProviderChoice { Source = ... }") leaks straight into the UI.
+    public override string ToString() => DisplayName;
+}
+
+/// <summary>
+/// One online search result row. <see cref="IsSelected"/> is the app's own multi-select flag
+/// (bound to <c>ListBoxItem.IsSelected</c> via the results list's <c>ItemContainerStyle</c>, so
+/// Ctrl/Shift-click "just works" in <c>SelectionMode="Extended"</c>) — independent of which
+/// single item is the current preview (<c>ListBox.SelectedItem</c>/<c>SelectedResult</c>).
+/// </summary>
+public sealed partial class OnlineResultViewModel : ObservableObject
+{
+    private readonly Action _onSelectionChanged;
+
+    [ObservableProperty] private bool _isSelected;
+
+    public OnlineResultViewModel(MetadataSearchResult result, Action onSelectionChanged)
     {
         Result = result;
         TypeLabel = EnumDisplay.Label(result.MediaType);
+        _onSelectionChanged = onSelectionChanged;
     }
 
     public MetadataSearchResult Result { get; }
@@ -39,6 +56,8 @@ public sealed class OnlineResultViewModel
     public string? PosterUrl => Result.PosterUrl;
 
     public string? Summary => Result.Summary;
+
+    partial void OnIsSelectedChanged(bool value) => _onSelectionChanged();
 }
 
 /// <summary>
@@ -145,6 +164,13 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
 
     public string? PreviewGenresLine => PreviewGenres is { } g ? _loc.Format("Online.GenresFormat", g) : null;
 
+    /// <summary>How many result rows the user has Ctrl/Shift-selected (independent of <see cref="SelectedResult"/>).</summary>
+    public int SelectedCount => Results.Count(r => r.IsSelected);
+
+    public string AddButtonLabel => SelectedCount > 1
+        ? _loc.Format("Online.AddManyFormat", SelectedCount)
+        : _loc.Text("Online.AddToLibrary");
+
     public async Task InitializeAsync(MediaType? preferredMediaType)
     {
         PreferredMediaType = preferredMediaType;
@@ -152,7 +178,7 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
 
         PosterDownloadAllowed = await _settings.GetBoolAsync(SettingKeys.PosterDownloadEnabled, false);
         DownloadPoster = PosterDownloadAllowed;
-        DownloadBackdrop = false;
+        DownloadBackdrop = PosterDownloadAllowed;
 
         Providers.Clear();
         var infos = await _metadata.GetProvidersAsync();
@@ -217,10 +243,11 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
             var found = await _metadata.SearchAsync(provider.Source, Query, PreferredMediaType, _cts.Token);
             foreach (var result in found)
             {
-                Results.Add(new OnlineResultViewModel(result));
+                Results.Add(new OnlineResultViewModel(result, RaiseSelectionChanged));
             }
 
             StatusMessage = Results.Count == 0 ? _loc.Text("Online.NoResults") : null;
+            RaiseSelectionChanged();
         }
         catch (OperationCanceledException)
         {
@@ -276,6 +303,12 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanImport))]
     private async Task AddToLibrary()
     {
+        if (SelectedCount > 1)
+        {
+            await AddManyToLibraryAsync();
+            return;
+        }
+
         if (Preview is not { } metadata)
         {
             return;
@@ -323,7 +356,87 @@ public sealed partial class OnlineSearchViewModel : ObservableObject
         }
     }
 
-    private bool CanImport() => Preview is not null && !IsImporting;
+    /// <summary>
+    /// Ctrl/Shift-selected multiple rows: fetch full details and import each one with the same
+    /// checkbox options, one request at a time (every call here is still only happening because
+    /// the user pressed this one button). A possible duplicate is skipped rather than prompted —
+    /// asking once per row would defeat the point of a batch add — and reported in the summary.
+    /// </summary>
+    private async Task AddManyToLibraryAsync()
+    {
+        if (SelectedProvider is not { } provider)
+        {
+            return;
+        }
+
+        var targets = Results.Where(r => r.IsSelected).ToList();
+        var options = new MetadataImportOptions(
+            ImportGenresAsTags,
+            DownloadPoster && PosterDownloadAllowed,
+            DownloadBackdrop && PosterDownloadAllowed);
+
+        IsImporting = true;
+        var imported = 0;
+        var skipped = 0;
+        var failed = 0;
+        int? lastImportedId = null;
+
+        try
+        {
+            for (var i = 0; i < targets.Count; i++)
+            {
+                var target = targets[i];
+                StatusMessage = _loc.Format("Online.BatchImportProgressFormat", i + 1, targets.Count, target.Title);
+
+                try
+                {
+                    var metadata = await _metadata.GetDetailsAsync(provider.Source, target.Result.ExternalId, CancellationToken.None);
+                    if (metadata is null)
+                    {
+                        failed++;
+                        continue;
+                    }
+
+                    var duplicate = await _importer.CheckDuplicateAsync(metadata);
+                    if (duplicate.IsPossibleDuplicate)
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    lastImportedId = await _importer.ImportAsync(metadata, options);
+                    imported++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Batch import failed for {ExternalId}.", target.Result.ExternalId);
+                    failed++;
+                }
+            }
+
+            ImportedMediaId = lastImportedId;
+            StatusMessage = null;
+            _dialog.ShowInfo(_loc.Format("Online.BatchImportSummaryFormat", imported, skipped, failed));
+
+            if (imported > 0)
+            {
+                RequestClose?.Invoke();
+            }
+        }
+        finally
+        {
+            IsImporting = false;
+        }
+    }
+
+    private bool CanImport() => !IsImporting && (SelectedCount > 1 || Preview is not null);
+
+    private void RaiseSelectionChanged()
+    {
+        OnPropertyChanged(nameof(SelectedCount));
+        OnPropertyChanged(nameof(AddButtonLabel));
+        AddToLibraryCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand]
     private void Cancel()

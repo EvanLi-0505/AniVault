@@ -103,6 +103,27 @@
   couldn't find it). If online search is off, pressing it asks to turn it on first (one Yes),
   then continues — still no network until the user explicitly enables it *and* runs a search.
 
+### Online search: multi-select + batch import — *requested*
+- `OnlineSearchWindow`'s results list is now `SelectionMode="Extended"` (`ListBoxItem.IsSelected`
+  two-way bound to a per-row `OnlineResultViewModel.IsSelected`, the same pattern already used by
+  `TagFilterOption`), so Ctrl/Shift-click selects several rows without disturbing the existing
+  layout — a hint line above the list explains the gesture, everything else in the window
+  (search bar, provider picker, preview pane, checkboxes, footer) is unchanged.
+- With 2+ rows selected, **Add to Library** relabels itself ("Add *n* to Library") and imports
+  every selected result in one pass: fetch details → duplicate-check → import, one row at a time.
+  A possible duplicate is **skipped silently** (prompting per-row would defeat a batch add) and
+  counted; a closing summary dialog reports added / skipped / failed. The window only closes if
+  at least one item was actually imported. The existing single-result flow (duplicate prompt,
+  open-existing / add-anyway / cancel) is untouched when 0–1 rows are selected.
+- Fixed a `ComboBox` bug surfaced while testing this: `ProviderChoice` (a record) was leaking its
+  auto-generated `ToString()` ("ProviderChoice { Source = ... }") into the closed selection box —
+  same class of bug as `FilterChoice<T>`, same fix (`override ToString() => DisplayName`).
+- "同时下载背景图" (download backdrop) now defaults to **checked**, matching the poster-download
+  checkbox, instead of always starting unchecked.
+- `OnlineSearchViewModelTests`: selection-count/button-label updates, `CanExecute` with multiple
+  rows selected and no loaded preview, batch import counting (imported/skipped-duplicate/failed),
+  window-stays-open when nothing imports, and the `ProviderChoice.ToString()` fix.
+
 ### Metadata providers (Phase 10) — *done*
 - `Metadata/IMetadataProvider` + isolated providers, **user-selectable in Settings**:
   - **Bangumi** (default) — anime & live-action, Chinese titles, no key; may need a VPN in mainland China.
@@ -240,7 +261,7 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 102 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 108 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
@@ -249,7 +270,7 @@ explicit button, never automatic — same rule `Metadata/` already follows).
   artwork import/thumbnail/clear/delete, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,
   `JsonPath` selector, custom-provider search/details/api-key + config round-trip,
   metadata import + duplicate detection + refresh-preserves-personal-data, online-search gate,
-  encrypted API keys, theme persistence).
+  encrypted API keys, theme persistence, online-search multi-select + batch import).
 - Navigation smoke test: all 16 sidebar pages + a media detail page + a runtime theme swap +
   a full second page tour in Chinese + load-and-close of the editor / online-search / first-run /
   custom-provider / rating-questionnaire / rating-rubric windows and a themed `Calendar`, with
