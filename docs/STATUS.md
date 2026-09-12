@@ -72,9 +72,9 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - The filter dropdowns (Status / Year / Season) now use `FilterChoice<T>` wrapper items instead
   of a bare `null` entry, so the "All" / "(none)" option can be re-selected (a WPF `Selector`
   cannot re-select a null item once a real value was chosen — you were stuck until "Reset").
-- Every library / status / Favorites / Liked / Search / tag page paginates at **60 cards**;
-  the tag filter paginates at **30**. `LibraryViewModel` keeps the full result list and only
-  builds card VMs for the visible page.
+- Every library / status / Favorites / Liked / Search / tag page paginates at **35 cards**
+  (lowered from 60 — see the render-cost investigation below); the tag filter paginates at **30**.
+  `LibraryViewModel` keeps the full result list and only builds card VMs for the visible page.
 - The **My Rating** page shows a one-paragraph summary of the bundled 10-point rating rubric
   (`Resources/rating-guide.md`, embedded) with an "Open the full rubric" button →
   `RatingGuideWindow` (a resizable, scrollable window; `IRatingGuideService`, `Utilities/MarkdownFlow`
@@ -295,11 +295,14 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
   updates without firing `Changed`, for a caller — both sites in `LibraryViewModel` qualify — that
   is about to reload explicitly right after anyway) and switching both call sites to it. Verified
   in the smoke-test log: each library page now shows exactly one
-  `Loaded filter options` → `Built` → `Rendered` triple instead of two. A single ~150–270ms
-  render for 47 cards is real and still not virtualization-fast, but this removes a genuine,
-  100%-avoidable doubling of it. A page-size reduction or a virtualizing panel (WPF ships neither
-  built in; a hand-written one can't be verified visually from here) remain the options if the
-  single-render cost is still noticeable — waiting on the user's next test before going further.
+  `Loaded filter options` → `Built` → `Rendered` triple instead of two. The user confirmed this
+  cut the felt pause noticeably but it was still perceptible for a still-unpaginated 47-item
+  library — so `LibraryViewModel.PageSize` was lowered **60 → 35** (the user's choice, after
+  seeing the measured ~20–45ms-for-5-cards vs ~150–270ms-for-47-cards numbers): bounds the
+  per-page render cost for any library size, and a 47-item Anime library now pages into two (35 +
+  12) instead of rendering all 47 at once. A hand-written virtualizing wrap panel (WPF ships none
+  built in) remains the fuller fix if 35 cards is still noticeable, but can't be verified visually
+  from here, so it isn't attempted without a clearer signal that pagination alone isn't enough.
 
 ### Anime seasons (Phase 7) — *done*
 - `SeasonsViewModel` + `SeasonsView`: left year list, four season tabs with per-year counts,

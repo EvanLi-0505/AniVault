@@ -50,7 +50,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private readonly ILocalizationService _loc;
     private readonly ILogger<LibraryViewModel> _logger;
 
-    private const int PageSize = 60;
+    // Lowered from 60: the library grid isn't virtualized, so WPF's render cost scales roughly
+    // with card count (measured ~150-270ms for 47 cards vs ~20-45ms for 5) — a smaller page bounds
+    // that cost without the risk of a hand-written virtualizing panel.
+    private const int PageSize = 35;
 
     private LibraryPreset _preset = new("Library", string.Empty);
     private CancellationTokenSource? _reloadCts;
