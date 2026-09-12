@@ -20,6 +20,8 @@
   "Common.Yes": "Yes",
   "Common.No": "No",
   "Common.NotConfigured": "(not configured)",
+  "Common.Go": "Go",
+  "Common.JumpToPageTooltip": "Type a page number and press Enter",
 
   "Nav.Home": "Home",
   "Nav.Anime": "Anime",

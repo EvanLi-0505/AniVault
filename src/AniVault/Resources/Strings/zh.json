@@ -20,6 +20,8 @@
   "Common.Yes": "是",
   "Common.No": "否",
   "Common.NotConfigured": "（未配置）",
+  "Common.Go": "跳转",
+  "Common.JumpToPageTooltip": "输入页码后按回车跳转",
 
   "Nav.Home": "主页",
   "Nav.Anime": "番剧",

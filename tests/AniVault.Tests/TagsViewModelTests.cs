@@ -122,6 +122,35 @@ public class TagsViewModelTests
     }
 
     [Fact]
+    public async Task GoToPage_Jumps_To_A_Valid_Page_And_Clears_The_Input()
+    {
+        using var db = new TestDatabase();
+        var (vm, _) = await CreateAsync(db, 25);
+
+        vm.PageJumpText = "2";
+        vm.GoToPageCommand.Execute(null);
+
+        Assert.Equal(2, vm.Page);
+        Assert.Equal(5, vm.VisibleTags.Count);
+        Assert.Equal(string.Empty, vm.PageJumpText);
+    }
+
+    [Fact]
+    public async Task GoToPage_Ignores_OutOfRange_Or_Garbage_Input()
+    {
+        using var db = new TestDatabase();
+        var (vm, _) = await CreateAsync(db, 25);
+
+        vm.PageJumpText = "99";
+        vm.GoToPageCommand.Execute(null);
+        Assert.Equal(1, vm.Page);
+
+        vm.PageJumpText = "not a number";
+        vm.GoToPageCommand.Execute(null);
+        Assert.Equal(1, vm.Page);
+    }
+
+    [Fact]
     public async Task ReorderTagAsync_Moves_The_Tag_And_Persists_The_New_Order()
     {
         using var db = new TestDatabase();

@@ -75,6 +75,11 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - Every library / status / Favorites / Liked / Search / tag page paginates at **35 cards**
   (lowered from 60 — see the render-cost investigation below); the tag filter paginates at **30**.
   `LibraryViewModel` keeps the full result list and only builds card VMs for the visible page.
+- **Jump to page** — *requested*: with many items, clicking ‹/› repeatedly to reach a distant page
+  got tedious. Both the library pager (`LibraryView`, shared by Anime/Movies/TV/every status and
+  filtered view) and the Tags page pager now have a small numeric box next to ‹ Page X/Y › — type
+  a page number and press Enter (or the Go button); out-of-range or non-numeric input is ignored
+  and the box clears either way. `LibraryViewModel.GoToPageCommand` / `TagsViewModel.GoToPageCommand`.
 - The **My Rating** page shows a one-paragraph summary of the bundled 10-point rating rubric
   (`Resources/rating-guide.md`, embedded) with an "Open the full rubric" button →
   `RatingGuideWindow` (a resizable, scrollable window; `IRatingGuideService`, `Utilities/MarkdownFlow`
@@ -343,14 +348,14 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 129 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 134 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, editor category override + save + Anime-field clearing on switch +
   artwork relocation on category switch, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
   round-trip + month free-text parsing + tag paging + silent-vs-firing bulk update, rating-calculator maths, single-instance
   guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +
-  drag-reorder across pages, season mapping + buckets,
+  drag-reorder across pages + jump-to-page, library pagination + jump-to-page, season mapping + buckets,
   artwork import always keeps original resolution + oversized-artwork scan/selective-compress +
   folder relocation +
   compress-existing-artwork pass, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,

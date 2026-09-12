@@ -123,6 +123,14 @@
             <Button x:Name="NextPageButton" Content="›" Padding="14,4" MinWidth="0" Style="{StaticResource Button.Ghost}"
                     Command="{Binding NextPageCommand}" ToolTip="{loc:Loc Tags.DragToPageNextTooltip}"
                     AllowDrop="True" DragEnter="OnPagerDragEnter" DragLeave="OnPagerDragLeave" Drop="OnPagerDrop" />
+            <TextBox Width="48" Margin="14,0,0,0" VerticalContentAlignment="Center" TextAlignment="Center"
+                     Text="{Binding PageJumpText, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="{loc:Loc Common.JumpToPageTooltip}">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Return" Command="{Binding GoToPageCommand}" />
+                </TextBox.InputBindings>
+            </TextBox>
+            <Button Content="{loc:Loc Common.Go}" Margin="6,0,0,0" Padding="10,4" Style="{StaticResource Button.Ghost}" Command="{Binding GoToPageCommand}" />
         </StackPanel>
     </Grid>
 </UserControl>

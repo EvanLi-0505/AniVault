@@ -72,6 +72,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty] private int _totalPages = 1;
     [ObservableProperty] private bool _pagingVisible;
     [ObservableProperty] private string _pageLabel = string.Empty;
+    [ObservableProperty] private string _pageJumpText = string.Empty;
 
     [ObservableProperty] private bool _ratingGuideVisible;
 
@@ -229,6 +230,19 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private bool CanPrevPage() => CurrentPage > 1;
 
     private bool CanNextPage() => CurrentPage < TotalPages;
+
+    /// <summary>Jumps straight to the page typed into <see cref="PageJumpText"/>; ignores garbage/out-of-range input.</summary>
+    [RelayCommand]
+    private void GoToPage()
+    {
+        if (int.TryParse(PageJumpText, out var page) && page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+            ApplyPage();
+        }
+
+        PageJumpText = string.Empty;
+    }
 
     [RelayCommand]
     private async Task SearchOnline()

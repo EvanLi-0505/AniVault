@@ -50,6 +50,7 @@ public sealed partial class TagsViewModel : ViewModelBase
     [ObservableProperty] private int _page = 1;
     [ObservableProperty] private int _totalPages = 1;
     [ObservableProperty] private bool _pagingVisible;
+    [ObservableProperty] private string _pageJumpText = string.Empty;
 
     public TagsViewModel(
         ITagService tagService,
@@ -153,6 +154,19 @@ public sealed partial class TagsViewModel : ViewModelBase
     private bool CanPrevPage() => Page > 1;
 
     private bool CanNextPage() => Page < TotalPages;
+
+    /// <summary>Jumps straight to the page typed into <see cref="PageJumpText"/>; ignores garbage/out-of-range input.</summary>
+    [RelayCommand]
+    private void GoToPage()
+    {
+        if (int.TryParse(PageJumpText, out var page) && page >= 1 && page <= TotalPages)
+        {
+            Page = page;
+            ApplyPage();
+        }
+
+        PageJumpText = string.Empty;
+    }
 
     private void ApplyPage()
     {
