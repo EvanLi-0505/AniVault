@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +18,13 @@ namespace AniVault.Services.Backup;
 /// </summary>
 public interface IBackupService
 {
-    /// <summary>Writes a backup archive into <paramref name="destinationDirectory"/> and returns its full path.</summary>
-    Task<string> CreateBackupAsync(string destinationDirectory, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Writes a backup archive into <paramref name="destinationDirectory"/> and returns its full
+    /// path. <paramref name="progress"/>, if given, is reported a 0.0-1.0 fraction as each file is
+    /// added to the archive — a large library's artwork folder is what actually takes visible time.
+    /// </summary>
+    Task<string> CreateBackupAsync(
+        string destinationDirectory, IProgress<double>? progress = null, CancellationToken cancellationToken = default);
 
     /// <summary>Validates an archive without changing anything.</summary>
     Task<BackupInspection> InspectAsync(string backupArchivePath, CancellationToken cancellationToken = default);
@@ -54,7 +60,8 @@ public sealed class BackupService : IBackupService
         _logger = logger;
     }
 
-    public async Task<string> CreateBackupAsync(string destinationDirectory, CancellationToken cancellationToken = default)
+    public async Task<string> CreateBackupAsync(
+        string destinationDirectory, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
         if (!_paths.IsConfigured)
         {
@@ -63,6 +70,11 @@ public sealed class BackupService : IBackupService
 
         Directory.CreateDirectory(destinationDirectory);
 
+        // A previous backup that was killed mid-write (crash, forced exit, power loss) leaves a
+        // ".tmp" behind — it never got renamed to a real ".zip", so nothing ever mistook it for a
+        // finished backup, but it's still disk clutter. Sweep it before starting a new one.
+        CleanupStaleTempFiles(destinationDirectory);
+
         var manifest = await BuildManifestAsync(cancellationToken);
         var fileName = $"AniVault_Backup_{DateTime.Now:yyyy-MM-dd_HHmmss}.zip";
         var finalPath = Path.Combine(destinationDirectory, fileName);
@@ -70,6 +82,17 @@ public sealed class BackupService : IBackupService
 
         // A consistent point-in-time copy of the live database (no file locking issues).
         var snapshotPath = await SnapshotDatabaseAsync(cancellationToken);
+
+        // Count ahead of time so progress is a real fraction of the work, not a guess. Artwork
+        // files dominate the total for any library with more than a handful of items.
+        var artworkFiles = ArtworkFolders
+            .Select(folder => Path.Combine(_paths.DataDirectory!, folder))
+            .Where(Directory.Exists)
+            .SelectMany(dir => Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+            .ToList();
+        var totalSteps = 2 + artworkFiles.Count; // manifest entry + db snapshot entry + each artwork file
+        var completedSteps = 0;
+        void ReportStep() => progress?.Report(Math.Min(1.0, (double)++completedSteps / totalSteps));
 
         try
         {
@@ -87,11 +110,14 @@ public sealed class BackupService : IBackupService
                     await JsonSerializer.SerializeAsync(entryStream, manifest, JsonOptions, cancellationToken);
                 }
 
+                ReportStep();
+
                 archive.CreateEntryFromFile(snapshotPath, "Database/AniVault.db", CompressionLevel.Optimal);
+                ReportStep();
 
                 foreach (var folder in ArtworkFolders)
                 {
-                    AddFolderToArchive(archive, Path.Combine(_paths.DataDirectory!, folder), folder, cancellationToken);
+                    AddFolderToArchive(archive, Path.Combine(_paths.DataDirectory!, folder), folder, cancellationToken, ReportStep);
                 }
             }
 
@@ -108,6 +134,20 @@ public sealed class BackupService : IBackupService
         {
             TryDeleteFile(tempPath);
             TryDeleteFile(snapshotPath);
+        }
+    }
+
+    /// <summary>Removes any orphaned "*.zip.tmp" left in <paramref name="destinationDirectory"/> by a backup that never finished.</summary>
+    private static void CleanupStaleTempFiles(string destinationDirectory)
+    {
+        if (!Directory.Exists(destinationDirectory))
+        {
+            return;
+        }
+
+        foreach (var stale in Directory.EnumerateFiles(destinationDirectory, "AniVault_Backup_*.zip.tmp"))
+        {
+            TryDeleteFile(stale);
         }
     }
 
@@ -249,7 +289,8 @@ public sealed class BackupService : IBackupService
         };
     }
 
-    private static void AddFolderToArchive(ZipArchive archive, string sourceFolder, string entryPrefix, CancellationToken cancellationToken)
+    private static void AddFolderToArchive(
+        ZipArchive archive, string sourceFolder, string entryPrefix, CancellationToken cancellationToken, Action? onFileAdded = null)
     {
         if (!Directory.Exists(sourceFolder))
         {
@@ -262,6 +303,7 @@ public sealed class BackupService : IBackupService
 
             var relative = Path.GetRelativePath(sourceFolder, file).Replace('\\', '/');
             archive.CreateEntryFromFile(file, $"{entryPrefix}/{relative}", CompressionLevel.Optimal);
+            onFileAdded?.Invoke();
         }
     }
 }

@@ -30,6 +30,13 @@ public sealed partial class BackupExportViewModel : ObservableObject
     [ObservableProperty]
     private bool _isWorking;
 
+    [ObservableProperty]
+    private bool _isBackingUp;
+
+    /// <summary>0.0-1.0 progress of an in-flight backup, for a determinate progress bar.</summary>
+    [ObservableProperty]
+    private double _backupProgress;
+
     public BackupExportViewModel(
         IBackupService backupService,
         ILibraryExportService exportService,
@@ -59,15 +66,30 @@ public sealed partial class BackupExportViewModel : ObservableObject
             return;
         }
 
-        await RunAsync(_loc.Text("Backup.Creating"), async () =>
+        BackupProgress = 0;
+        IsBackingUp = true;
+        var progress = new Progress<double>(fraction =>
         {
-            var path = await _backupService.CreateBackupAsync(folder);
-            StatusMessage = _loc.Format("Backup.SavedFormat", Path.GetFileName(path));
-            if (_dialogService.Confirm(_loc.Format("Backup.CompleteFormat", path), _loc.Text("Backup.CompleteTitle")))
-            {
-                OpenContainingFolder(path);
-            }
+            BackupProgress = fraction;
+            StatusMessage = _loc.Format("Backup.CreatingProgressFormat", (int)Math.Round(fraction * 100));
         });
+
+        try
+        {
+            await RunAsync(_loc.Text("Backup.Creating"), async () =>
+            {
+                var path = await _backupService.CreateBackupAsync(folder, progress);
+                StatusMessage = _loc.Format("Backup.SavedFormat", Path.GetFileName(path));
+                if (_dialogService.Confirm(_loc.Format("Backup.CompleteFormat", path), _loc.Text("Backup.CompleteTitle")))
+                {
+                    OpenContainingFolder(path);
+                }
+            });
+        }
+        finally
+        {
+            IsBackingUp = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(NotWorking))]

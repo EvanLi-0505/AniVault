@@ -159,4 +159,36 @@ public class LibraryViewModelTests
         vm.GoToPageCommand.Execute(null);
         Assert.Equal(1, vm.CurrentPage);
     }
+
+    [Fact]
+    public async Task LoadAsync_Preserves_CurrentPage_For_A_GoBack_Style_Resume()
+    {
+        using var lib = new TestLibrary();
+        var vm = await CreateWithAnimeAsync(lib, 40);
+
+        vm.NextPageCommand.Execute(null);
+        Assert.Equal(2, vm.CurrentPage);
+
+        // NavigationService.GoBack() resumes the SAME instance by calling LoadAsync() again,
+        // without re-running Configure() — the user should land back on the page they left.
+        await vm.LoadAsync();
+
+        Assert.Equal(2, vm.CurrentPage);
+    }
+
+    [Fact]
+    public async Task Changing_A_Filter_Resets_Back_To_Page_One()
+    {
+        using var lib = new TestLibrary();
+        var vm = await CreateWithAnimeAsync(lib, 40);
+
+        vm.NextPageCommand.Execute(null);
+        Assert.Equal(2, vm.CurrentPage);
+
+        vm.Filters.Text = "Anime 000"; // fires Filters.Changed -> a debounced reload that resets the page
+        await Task.Delay(500);
+
+        Assert.Equal(1, vm.CurrentPage);
+        Assert.Single(vm.Items);
+    }
 }

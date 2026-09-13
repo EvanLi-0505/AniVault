@@ -337,6 +337,7 @@
   "Dialog.ThreeWayFormat": "{0}\n\n是 = {1}\n否 = {2}\n取消 = 不做任何操作",
 
   "Backup.Creating": "正在创建备份…",
+  "Backup.CreatingProgressFormat": "正在创建备份… {0}%",
   "Backup.Restoring": "正在恢复…",
   "Backup.Exporting": "正在导出…",
   "Backup.ChooseFolder": "选择备份要保存到的文件夹（例如 U 盘）",

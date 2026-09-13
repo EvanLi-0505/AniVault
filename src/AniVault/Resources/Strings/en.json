@@ -337,6 +337,7 @@
   "Dialog.ThreeWayFormat": "{0}\n\nYes = {1}\nNo = {2}\nCancel = do nothing",
 
   "Backup.Creating": "Creating backup…",
+  "Backup.CreatingProgressFormat": "Creating backup… {0}%",
   "Backup.Restoring": "Restoring…",
   "Backup.Exporting": "Exporting…",
   "Backup.ChooseFolder": "Choose a folder for the backup (e.g. a USB drive)",

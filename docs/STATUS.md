@@ -46,6 +46,17 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - Settings → "Back up now…" (choose any folder), "Restore from backup…" (validates, warns,
   replaces the library, prompts a restart), "Open backup folder".
 - WAL checkpoint before backup; pooled connections released before restore.
+- **Backup progress bar + crash safety** — *requested*: a library with many artwork files could
+  take a visible moment to back up with no feedback that anything was happening.
+  `IBackupService.CreateBackupAsync` now takes an `IProgress<double>` reported as each file is
+  added to the archive (weighted: manifest + db snapshot + one step per artwork file, counted up
+  front so the fraction is real, not a guess); Settings shows a determinate progress bar plus a
+  "Creating backup… N%" status line while it runs. Crash/kill safety was mostly already in place
+  (the archive is always built at `<name>.zip.tmp` and only `File.Move`d to the real `.zip` name
+  after it closes successfully, so a hard kill mid-write can only ever leave an orphaned `.tmp` —
+  never a truncated file masquerading as a real backup) — added the missing piece: a new backup
+  now sweeps any `AniVault_Backup_*.zip.tmp` left behind by a previous interrupted run before it
+  starts, so a crash doesn't accumulate stray junk in the backups folder.
 
 ### Markdown export — *requested*
 - `LibraryExportService` + `MarkdownLibraryWriter` (pluggable writer).
@@ -80,6 +91,17 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
   filtered view) and the Tags page pager now have a small numeric box next to ‹ Page X/Y › — type
   a page number and press Enter (or the Go button); out-of-range or non-numeric input is ignored
   and the box clears either way. `LibraryViewModel.GoToPageCommand` / `TagsViewModel.GoToPageCommand`.
+- **"← Back" from a detail page now resumes the same library page** — *fixed*: previously
+  clicking into an item on page 3 and then hitting back always landed you on page 1.
+  `NavigationService.GoBack()` reuses the same `LibraryViewModel` instance it pushed before
+  navigating to the detail page (rather than creating a fresh one), so `CurrentPage` was already
+  preserved on the object — the bug was that `LoadAsync()` → `ReloadAsync()` unconditionally reset
+  `CurrentPage = 1` on every call, including this resume. `ReloadAsync` now takes a `resetPage`
+  flag: `true` (the existing behavior) when a filter/sort/search change legitimately invalidates
+  the old page number, `false` when `LoadAsync()` calls it directly (covers both a brand-new page,
+  where `CurrentPage` is already 1 by construction, and a `GoBack()` resume, where it now stays
+  wherever the user left it — `ApplyPage()`'s own clamp still handles a page number that's become
+  out of range because items were added/removed while the detail page was open).
 - The **My Rating** page shows a one-paragraph summary of the bundled 10-point rating rubric
   (`Resources/rating-guide.md`, embedded) with an "Open the full rubric" button →
   `RatingGuideWindow` (a resizable, scrollable window; `IRatingGuideService`, `Utilities/MarkdownFlow`
@@ -134,6 +156,16 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
   filter chips) and `TagPickerViewModel` (the editor's tag suggestions) both read
   `ITagService.GetAllWithUsageAsync()`, which now orders by `SortOrder` — so arranging tags on the
   Tags page is immediately reflected in the library filter panel, with no separate wiring needed.
+- **Drag scrolling + continuous page-flip** — *requested* (two rough edges found while actually
+  dragging tags): (1) hovering a dragged tag over ‹ / › used to flip exactly one page and then
+  stop — now `TagsView`'s pager-hover `DispatcherTimer` keeps ticking (an initial 650ms delay,
+  then every 350ms) instead of stopping itself after the first tick, so holding position over ›
+  walks all the way to the last page. (2) the mouse wheel doesn't raise normal routed events
+  during an OLE drag (`DragDrop.DoDragDrop` captures input for its own modal loop — a genuine WPF
+  limitation, not a bug in this app's code), so scrolling the tag list while holding a tag near
+  the top/bottom edge needed its own mechanism: `TagListScrollViewer`'s `PreviewDragOver` nudges
+  `ScrollToVerticalOffset` on a timer whenever the drag is within 44px of the top or bottom, the
+  same "auto-scroll near the edge" pattern Explorer uses for drag-and-drop lists.
 
 ### Online metadata search — discoverability
 - The library header "🌐 Search online" button is now always shown on the Anime / Movies /
@@ -348,14 +380,16 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 134 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 138 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, editor category override + save + Anime-field clearing on switch +
   artwork relocation on category switch, `ShowOnHome` default/persist/recently-added-exclusion, episode
-  sync/watched/rating clamp/completed-stamp, backup round-trip,
+  sync/watched/rating clamp/completed-stamp, backup round-trip + progress reporting +
+  stale-tmp cleanup,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
   round-trip + month free-text parsing + tag paging + silent-vs-firing bulk update, rating-calculator maths, single-instance
   guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +
-  drag-reorder across pages + jump-to-page, library pagination + jump-to-page, season mapping + buckets,
+  drag-reorder across pages + jump-to-page, library pagination + jump-to-page +
+  page-preserved-on-filter-vs-resume, season mapping + buckets,
   artwork import always keeps original resolution + oversized-artwork scan/selective-compress +
   folder relocation +
   compress-existing-artwork pass, AniList/Bangumi/Jikan/Kitsu JSON→DTO mapping,

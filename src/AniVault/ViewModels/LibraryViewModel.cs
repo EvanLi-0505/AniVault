@@ -186,7 +186,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
             Filters.EndUpdateSilently();
         }
 
-        await ReloadAsync(CancellationToken.None);
+        // resetPage: false — LoadAsync runs both for a brand-new page (CurrentPage is already 1,
+        // its field default) and for GoBack() resuming an existing LibraryViewModel instance,
+        // where the user expects to land back on whatever page they were browsing, not page 1.
+        await ReloadAsync(CancellationToken.None, resetPage: false);
     }
 
     [RelayCommand]
@@ -323,7 +326,14 @@ public sealed partial class LibraryViewModel : ViewModelBase
         }
     }
 
-    private async Task ReloadAsync(CancellationToken cancellationToken)
+    /// <param name="resetPage">
+    /// Whether a changed result set should snap back to page 1 (the right call whenever a
+    /// filter/sort/search change makes the old page number meaningless) or leave
+    /// <see cref="CurrentPage"/> as-is (so <see cref="LoadAsync"/> can resume wherever a
+    /// <c>GoBack()</c>-reused instance was left, per <see cref="ApplyPage"/>'s own clamping to
+    /// whatever <see cref="TotalPages"/> the fresh result set actually has).
+    /// </param>
+    private async Task ReloadAsync(CancellationToken cancellationToken, bool resetPage = true)
     {
         IsBusy = true;
         try
@@ -339,7 +349,11 @@ public sealed partial class LibraryViewModel : ViewModelBase
             }
 
             _pageSource = results.ToList();
-            CurrentPage = 1;
+            if (resetPage)
+            {
+                CurrentPage = 1;
+            }
+
             ApplyPage();
             OnPropertyChanged(nameof(EmptyStateText));
         }

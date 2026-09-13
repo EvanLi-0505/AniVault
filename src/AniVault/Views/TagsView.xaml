@@ -69,8 +69,9 @@
                              Message="{loc:Loc Tags.EmptyMessage}"
                              Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}" />
 
-        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto"
-                      Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
+        <ScrollViewer x:Name="TagListScrollViewer" Grid.Row="3" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}"
+                      AllowDrop="True" PreviewDragOver="OnTagListPreviewDragOver" DragLeave="OnTagListDragLeave">
             <ItemsControl ItemsSource="{Binding VisibleTags}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>

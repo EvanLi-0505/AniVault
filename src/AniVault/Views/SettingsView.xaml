@@ -56,6 +56,9 @@
                     <Button Content="{loc:Loc Settings.ExportMarkdown}" HorizontalAlignment="Left"
                             Style="{StaticResource Button.Ghost}" Command="{Binding ExportMarkdownCommand}" />
 
+                    <ProgressBar Style="{StaticResource BusyBar}" IsIndeterminate="False" Height="4" Margin="0,12,0,0"
+                                 Minimum="0" Maximum="1" Value="{Binding BackupProgress, Mode=OneWay}"
+                                 Visibility="{Binding IsBackingUp, Converter={StaticResource BoolToVisibility}}" />
                     <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Text.Secondary}" Margin="0,12,0,0"
                                Visibility="{Binding StatusMessage, Converter={StaticResource NotEmptyToVisible}}" />
                 </StackPanel>
