@@ -10,7 +10,8 @@
              Background="{DynamicResource Brush.Background}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,28">
-        <StackPanel MaxWidth="720" HorizontalAlignment="Left">
+        <!-- MaxWidth with the default Stretch alignment centres the column in a wide window. -->
+        <StackPanel MaxWidth="720">
             <TextBlock Text="{loc:Loc Settings.Title}" Style="{StaticResource Text.Heading}" />
 
             <!-- Data folder -->

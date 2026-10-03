@@ -58,9 +58,24 @@
                 <StackPanel>
                     <Grid Height="236">
                         <Border Background="{DynamicResource Brush.SurfaceAlt}">
-                            <TextBlock Text="{loc:Loc Card.NoPoster}" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Style="{StaticResource Text.Muted}"
-                                       Visibility="{Binding IsPosterLoading, Converter={StaticResource InverseBoolToVisibility}}" />
+                            <!-- Only for a card that really has no poster: while a poster fades in it is
+                                 translucent, and this text would otherwise show through it. -->
+                            <TextBlock Text="{loc:Loc Card.NoPoster}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Muted}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsPosterLoading}" Value="False" />
+                                                    <Condition Binding="{Binding Poster}" Value="{x:Null}" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </Border>
 
                         <!-- Skeleton: pulses only while the thumbnail is actually being decoded, and

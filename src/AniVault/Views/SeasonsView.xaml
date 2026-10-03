@@ -99,11 +99,14 @@
                               Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
                     <ItemsControl ItemsSource="{Binding Items}">
                         <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                            <ItemsPanelTemplate>
+                                <!-- Centred, same as LibraryView. -->
+                                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" />
+                            </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <controls:MediaCard Margin="0,0,14,14"
+                                <controls:MediaCard Margin="7,0,7,14"
                                                     OpenCommand="{Binding DataContext.OpenMediaCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

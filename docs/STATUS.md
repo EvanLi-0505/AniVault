@@ -1,6 +1,6 @@
 # Implementation status
 
-**Shipped as 1.9.1.** Everything below this line has landed, been build/test-verified (0
+**Shipped as 1.9.2.** Everything below this line has landed, been build/test-verified (0
 warnings, 0 errors), and smoke-tested on both the dev build and the packaged portable exe /
 installer. See `CLAUDE.md` for the short version and the hard constraints.
 
@@ -447,6 +447,21 @@ explicit button, never automatic — same rule `Metadata/` already follows).
   Upgrading over a pre-1.9.1 install removes the old uninstaller files, its Start-menu shortcut
   and its registry entry (checked with a renamed test build installed silently into a scratch
   folder seeded with stand-in `unins000.*` files and a stand-in registry key).
+
+### 1.9.2 — centred layouts — *requested*
+- **Settings**: the 720px card column was pinned to the left edge; it is now centred in a wide
+  window (`MaxWidth` with the default Stretch alignment).
+- **Poster grids** (`LibraryView` — every library / status / favourites / search page — and
+  `SeasonsView`): the `WrapPanel` was left-aligned, so whatever width the fixed-size cards could
+  not fill piled up as a gap on the right. The panel is now `HorizontalAlignment="Center"` with
+  symmetric card margins (`7,0,7,14`), so that gap is split evenly; a page with a single short
+  row (e.g. 5 movies) is centred as a whole, and a short last row stays left-aligned under the
+  full rows above it.
+- **"No poster" text no longer shows through a poster that is fading in** (found in the
+  verification screenshots; introduced with the 1.9.0 skeleton): it is now shown only when the
+  card is not loading *and* has no image.
+- Verified from `PrintWindow` screenshots of the Debug build during the smoke tour, on a copy of
+  a real 482-title library at 2400x1400: Settings, Movies (5 cards), Liked (14 cards), Seasons.
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
