@@ -77,5 +77,5 @@ tags, a rating questionnaire (`Resources/rating-guide.md` rubric → `RatingCalc
 multi-select batch import, an always-editable editor category override, an explicit opt-in
 "compress oversized artwork" tool, a collapsible filter panel, a per-title hideable episode list,
 poster-card loading skeletons, portable packaging + installer, light/dark themes, and full
-English / 中文 localization (runtime toggle in Settings → Appearance). Current build: **2.0.0**. See
+English / 中文 localization (runtime toggle in Settings → Appearance). Shipped as **2.0.0**. See
 `docs/STATUS.md` for the authoritative list and what remains.

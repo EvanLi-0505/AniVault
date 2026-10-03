@@ -34,6 +34,16 @@
                         <Button Content="{loc:Loc Settings.CompressArtwork}" Command="{Binding CompressArtworkCommand}" />
                         <Button Content="{loc:Loc Settings.ChangeDataFolder}" Command="{Binding ChangeDataFolderCommand}" />
                     </WrapPanel>
+
+                    <!-- The one place outside the data folder where files are left behind. -->
+                    <Border Height="1" Background="{DynamicResource Brush.Border}" Margin="0,16" />
+
+                    <TextBlock Text="{loc:Loc Settings.TempFolder}" Style="{StaticResource Text.Secondary}" FontWeight="SemiBold" />
+                    <TextBlock Text="{loc:Loc Settings.TempFolderDesc}" Style="{StaticResource Text.Muted}"
+                               TextWrapping="Wrap" Margin="0,4,0,8" />
+                    <TextBlock Text="{Binding TempFolderLine}" Style="{StaticResource Text.Muted}" TextWrapping="Wrap" />
+                    <Button Content="{loc:Loc Settings.OpenTempFolder}" HorizontalAlignment="Left" Margin="0,12,0,0"
+                            Style="{StaticResource Button.Ghost}" Command="{Binding OpenTempFolderCommand}" />
                 </StackPanel>
             </Border>
 

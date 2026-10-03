@@ -15,6 +15,9 @@ public static class ExtractionCacheCleaner
 {
     private const string PendingDeleteSuffix = ".delete";
 
+    // The host names the folder after the app (the exe's file name without extension).
+    private const string AppFolderName = "AniVault";
+
     /// <summary>
     /// The folder this process's native libraries were unpacked to, or null when the app is not
     /// running as a single-file build (a dev build, the test host) — in which case nothing here
@@ -31,10 +34,12 @@ public static class ExtractionCacheCleaner
         {
             var directory = Path.TrimEndingDirectorySeparator(entry);
 
-            // <base>\.net\<app name>\<build id> — only that shape is the host's extraction folder.
+            // <base>\.net\AniVault\<build id> — only that exact shape is the host's extraction
+            // folder for this app; anything else is not ours, and its siblings must never be touched.
             var appFolder = Path.GetDirectoryName(directory);
             var dotnetFolder = appFolder is null ? null : Path.GetDirectoryName(appFolder);
             if (dotnetFolder is not null
+                && string.Equals(Path.GetFileName(appFolder), AppFolderName, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(Path.GetFileName(dotnetFolder), ".net", StringComparison.OrdinalIgnoreCase)
                 && Directory.Exists(directory))
             {
@@ -44,6 +49,17 @@ public static class ExtractionCacheCleaner
 
         return null;
     }
+
+    /// <summary>
+    /// The folder that holds the unpacked native libraries of every build
+    /// (<c>%TEMP%\.net\AniVault</c>) — what Settings points the user at, since the running
+    /// build's own subfolder is the one thing the app cannot remove for them. For a build that is
+    /// not single-file this is where that folder would be; it may not exist.
+    /// </summary>
+    public static string GetCacheRoot()
+        => FindCurrentExtractionDirectory() is { } current && Path.GetDirectoryName(current) is { } appFolder
+            ? appFolder
+            : Path.Combine(Path.GetTempPath(), ".net", AppFolderName);
 
     /// <summary>
     /// Deletes every sibling of <paramref name="currentDirectory"/>. A folder some other running

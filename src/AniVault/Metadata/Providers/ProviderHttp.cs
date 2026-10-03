@@ -36,6 +36,10 @@ internal sealed class ProviderHttp
 
     public async Task<JsonDocument> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        // Every caller hands its request over for good, so it is released here once the
+        // response has been read.
+        using var ownedRequest = request;
+
         HttpResponseMessage response;
         try
         {

@@ -3,14 +3,32 @@
 An offline-first personal anime & media library for Windows. Native WPF (.NET 10),
 SQLite storage, no web components, no telemetry, no automatic network access.
 
-> Status: 1.6 — full local library (CRUD, episodes, ratings, always-editable category, tags
-> with drag-to-reorder, anime seasons, artwork with an explicit opt-in compression tool),
-> optional online metadata search (Bangumi / AniList / Jikan / Kitsu / TMDB / one custom
-> provider) with duplicate detection and multi-select batch import, ZIP backup/restore,
-> Markdown export, single-instance guard, portable packaging + installer, light/dark themes,
-> and full English / 中文 localization. See [docs/STATUS.md](docs/STATUS.md) for the
-> authoritative feature list and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the
-> component conventions.
+> Status: 2.0 — full local library (CRUD, episodes with a per-title hideable checklist, ratings
+> with a guided questionnaire, always-editable category, tags with drag-to-reorder, anime
+> seasons, artwork with an explicit opt-in compression tool), paged poster grids that always
+> end on a full row with jump-to-page and a collapsible filter panel, optional online metadata
+> search (Bangumi / AniList / Jikan / Kitsu / TMDB / one custom provider) with duplicate
+> detection and multi-select batch import, ZIP backup/restore (older backups are upgraded
+> automatically), Markdown export, single-instance guard, portable packaging + installer,
+> light/dark themes, and full English / 中文 localization. See
+> [docs/STATUS.md](docs/STATUS.md) for the authoritative feature list and
+> [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the component conventions.
+
+## Download & use
+
+Grab the latest build from the [Releases](../../releases) page — no .NET install needed:
+
+- **`AniVault-<version>-win-x64-portable.zip`** — extract anywhere and run `AniVault.exe`.
+- **`AniVault-<version>-Setup.exe`** — per-user installer (no admin prompt) that adds a
+  Start-menu shortcut. It installs the same two files as the ZIP and no uninstaller.
+
+On first launch you choose a data folder; the database, artwork, logs and backups all live
+there. To update, replace `AniVault.exe` with the new one — your data folder is untouched.
+
+**Removing AniVault** — delete the app folder (plus the shortcut if you used the installer)
+and, if you want the library gone too, your data folder. The only other thing left on the PC is
+a small runtime cache at `%TEMP%\.net\AniVault` (about 10 MB; Settings → Data folder has a
+button that opens it). AniVault writes nothing to the registry.
 
 ## Requirements
 

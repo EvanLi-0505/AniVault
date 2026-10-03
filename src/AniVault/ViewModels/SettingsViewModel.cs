@@ -35,6 +35,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _dataDirectory = string.Empty;
     [ObservableProperty] private string _databaseLine = string.Empty;
     [ObservableProperty] private string _configLine = string.Empty;
+    [ObservableProperty] private string _tempFolderLine = string.Empty;
     [ObservableProperty] private string _mediaStoredLine = string.Empty;
     [ObservableProperty] private bool _onlineSearchEnabled;
     [ObservableProperty] private bool _posterDownloadEnabled;
@@ -85,6 +86,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         DataDirectory = _paths.DataDirectory ?? notConfigured;
         DatabaseLine = _loc.Format("Settings.DatabaseFormat", _paths.IsConfigured ? _paths.DatabaseFilePath : notConfigured);
         ConfigLine = _loc.Format("Settings.ConfigFormat", _bootstrap.ConfigFilePath);
+        TempFolderLine = _loc.Format("Settings.TempFolderFormat", ExtractionCacheCleaner.GetCacheRoot());
 
         Theme = _themeService.Current;
         Language = _loc.Current;
@@ -157,6 +159,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [RelayCommand]
     private void OpenLogsFolder() => OpenInExplorer(_paths.IsConfigured ? _paths.LogsDirectory : null);
+
+    [RelayCommand]
+    private void OpenTempFolder() => OpenInExplorer(ExtractionCacheCleaner.GetCacheRoot());
 
     [RelayCommand]
     private void ClearLogs()

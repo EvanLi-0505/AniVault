@@ -1,6 +1,6 @@
 # Implementation status
 
-**Built as 2.0.0** (awaiting the user's manual test before release). Everything below this line has landed, been build/test-verified (0
+**Shipped as 2.0.0.** Everything below this line has landed, been build/test-verified (0
 warnings, 0 errors), and smoke-tested on both the dev build and the packaged portable exe /
 installer. See `CLAUDE.md` for the short version and the hard constraints.
 
@@ -492,6 +492,15 @@ explicit button, never automatic — same rule `Metadata/` already follows).
   is using, and a folder another running copy has libraries loaded from is left whole (rename
   first — which fails as a unit while any file inside is open — then delete). Skipped under
   `ANIVAULT_SMOKE`, which bypasses the single-instance guard.
+- **Settings shows where that folder is.** The running build's own folder (about 10 MB) is the
+  one thing the app cannot delete for the user, so the Data folder card now has a "Temporary
+  runtime files" section: what the folder is, that older copies are cleaned automatically, that
+  it holds no library data, its path, and an "Open temp folder" button
+  (`ExtractionCacheCleaner.GetCacheRoot`). With the data folder and the config path already
+  listed on that card, every place AniVault leaves files is now visible from Settings.
+- Final review before release: analyzer pass (unused members / values / parameters) clean, string
+  tables in parity with no unreferenced or missing keys, no hard-coded colours in views.
+  `ProviderHttp.SendAsync` now disposes the request it is handed.
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
@@ -533,5 +542,7 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 - Localization covers English + 中文; adding a third language is a new `Resources/Strings/<code>.json`
   plus an `AppLanguage` enum value.
 - A few OS file-dialog filter captions ("Images (*.jpg…)", "Markdown (*.md)") are still English-only.
+- The metadata providers' descriptions in Settings and their network-error messages
+  (`MetadataProviderException`) are English-only too.
 - Editing a media item's episode count later does not auto-resync the episode list (use the detail-page button).
 - Live network tests are not in the automated suite (provider mapping is covered with canned responses).
