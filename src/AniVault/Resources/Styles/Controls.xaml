@@ -6,7 +6,6 @@
     <conv:EnumLabelConverter x:Key="EnumLabel" />
     <conv:NullOrEmptyToVisibilityConverter x:Key="EmptyToVisible" />
     <conv:NullOrEmptyToVisibilityConverter x:Key="NotEmptyToVisible" Invert="True" />
-    <conv:EmptyCollectionToVisibilityConverter x:Key="EmptyCollectionToVisible" />
     <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
     <conv:WatchStatusToBrushConverter x:Key="WatchStatusToBrush" />
     <conv:PositiveNumberToVisibilityConverter x:Key="PositiveToVisible" />
@@ -44,6 +43,35 @@
 
     <Style x:Key="Text.Muted" TargetType="TextBlock" BasedOn="{StaticResource Text.Secondary}">
         <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
+    </Style>
+
+    <!-- Tooltips. The stock tooltip keeps its light system background, but its text is a TextBlock
+         that picks up the implicit style above — near-white text on a near-white popup in the dark
+         theme. Themed here so both follow the active palette. -->
+    <Style TargetType="ToolTip">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+        <Setter Property="Background" Value="{DynamicResource Brush.SurfaceAlt}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+        <Setter Property="Padding" Value="9,6" />
+        <Setter Property="MaxWidth" Value="420" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1" CornerRadius="{StaticResource Radius.Control}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter>
+                            <ContentPresenter.Resources>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Primary button -->

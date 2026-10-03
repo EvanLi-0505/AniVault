@@ -3,16 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:AniVault.Controls"
              xmlns:loc="clr-namespace:AniVault.Utilities"
-             x:Name="Root" Width="172" RenderTransformOrigin="0.5,0.5">
+             x:Name="Root" Width="172">
 
-    <UserControl.RenderTransform>
-        <TranslateTransform x:Name="Lift" Y="0" />
-    </UserControl.RenderTransform>
     <UserControl.Triggers>
         <EventTrigger RoutedEvent="UserControl.MouseEnter">
             <BeginStoryboard>
                 <Storyboard>
-                    <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y"
+                    <DoubleAnimation Storyboard.TargetName="CardBody"
+                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
                                      To="-3" Duration="0:0:0.12" />
                 </Storyboard>
             </BeginStoryboard>
@@ -20,75 +18,135 @@
         <EventTrigger RoutedEvent="UserControl.MouseLeave">
             <BeginStoryboard>
                 <Storyboard>
-                    <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y"
+                    <DoubleAnimation Storyboard.TargetName="CardBody"
+                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
                                      To="0" Duration="0:0:0.12" />
                 </Storyboard>
             </BeginStoryboard>
         </EventTrigger>
     </UserControl.Triggers>
 
-    <Grid>
-        <!-- Whole card opens the detail page -->
-        <Button Command="{Binding OpenCommand, ElementName=Root}"
-                CommandParameter="{Binding}"
-                Cursor="Hand" Padding="0" BorderThickness="0" Background="Transparent"
-                HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
-                ToolTip="{Binding Title}">
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Style="{StaticResource Card}" ClipToBounds="True">
-                        <ContentPresenter />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Primary}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Button.Template>
+    <!-- The transparent outer grid is the hover target and never moves; only CardBody lifts.
+         Lifting the hit target itself made the bottom edge and the rounded corners slide out from
+         under the pointer, which un-hovered the card, dropped it back under the pointer, and
+         looped — a visible hover flicker. -->
+    <Grid Background="Transparent">
+        <Grid x:Name="CardBody">
+            <Grid.RenderTransform>
+                <TranslateTransform />
+            </Grid.RenderTransform>
 
-            <StackPanel>
-                <Grid Height="236">
-                    <Border Background="{DynamicResource Brush.SurfaceAlt}">
-                        <TextBlock Text="{loc:Loc Card.NoPoster}" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Style="{StaticResource Text.Muted}" />
-                    </Border>
-                    <Image Source="{Binding Poster}" Stretch="UniformToFill"
-                           Visibility="{Binding Poster, Converter={StaticResource NotEmptyToVisible}}" />
+            <!-- Whole card opens the detail page -->
+            <Button Command="{Binding OpenCommand, ElementName=Root}"
+                    CommandParameter="{Binding}"
+                    Cursor="Hand" Padding="0" BorderThickness="0" Background="Transparent"
+                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                    ToolTip="{Binding Title}">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Style="{StaticResource Card}" ClipToBounds="True">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Primary}" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
 
-                    <controls:RatingBadge Rating="{Binding RatingValue}"
-                                          HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" />
-                    <TextBlock Text="❤" Foreground="{DynamicResource Brush.Favorite}" FontSize="14"
-                               HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8"
-                               Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVisibility}}" />
-                </Grid>
+                <StackPanel>
+                    <Grid Height="236">
+                        <Border Background="{DynamicResource Brush.SurfaceAlt}">
+                            <TextBlock Text="{loc:Loc Card.NoPoster}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Style="{StaticResource Text.Muted}"
+                                       Visibility="{Binding IsPosterLoading, Converter={StaticResource InverseBoolToVisibility}}" />
+                        </Border>
 
-                <StackPanel Margin="10,8,10,10">
-                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"
-                               FontWeight="SemiBold" MaxHeight="34" TextWrapping="Wrap" />
-                    <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Text.Muted}" Margin="0,3,0,6" />
-                    <controls:StatusBadge Status="{Binding Status}" HorizontalAlignment="Left" />
+                        <!-- Skeleton: pulses only while the thumbnail is actually being decoded, and
+                             the storyboard is stopped (not just hidden) the moment it arrives. -->
+                        <Border Background="{DynamicResource Brush.SurfaceHover}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPosterLoading}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard Name="SkeletonPulse">
+                                                    <Storyboard Timeline.DesiredFrameRate="30">
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         From="0.35" To="1" Duration="0:0:0.7"
+                                                                         AutoReverse="True" RepeatBehavior="Forever" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="SkeletonPulse" />
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+
+                        <Image Source="{Binding Poster}" Stretch="UniformToFill"
+                               Visibility="{Binding Poster, Converter={StaticResource NotEmptyToVisible}}">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <!-- Fades in only a poster that had to be waited for; one served
+                                             from the in-memory cache was never "loading" and just appears. -->
+                                        <DataTrigger Binding="{Binding IsPosterLoading}" Value="True">
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         From="0" To="1" Duration="0:0:0.18"
+                                                                         FillBehavior="Stop" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+
+                        <controls:RatingBadge Rating="{Binding RatingValue}"
+                                              HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" />
+                        <TextBlock Text="❤" Foreground="{DynamicResource Brush.Favorite}" FontSize="14"
+                                   HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8"
+                                   Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVisibility}}" />
+                    </Grid>
+
+                    <StackPanel Margin="10,8,10,10">
+                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"
+                                   FontWeight="SemiBold" MaxHeight="34" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Text.Muted}" Margin="0,3,0,6" />
+                        <controls:StatusBadge Status="{Binding Status}" HorizontalAlignment="Left" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </Button>
+            </Button>
 
-        <!-- Quick actions, revealed on hover (only when the host supplies the commands) -->
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,196,8,0"
-                    Visibility="{Binding EditCommand, ElementName=Root, Converter={StaticResource NotEmptyToVisible}}">
-            <StackPanel.Style>
-                <Style TargetType="StackPanel">
-                    <Setter Property="Opacity" Value="0" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                            <Setter Property="Opacity" Value="1" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </StackPanel.Style>
-            <Button Content="Edit" Padding="8,3" FontSize="11" Style="{StaticResource Button.Ghost}"
-                    Command="{Binding EditCommand, ElementName=Root}" CommandParameter="{Binding}" />
-            <Button Content="Delete" Padding="8,3" FontSize="11" Margin="6,0,0,0" Style="{StaticResource Button.DangerGhost}"
-                    Command="{Binding DeleteCommand, ElementName=Root}" CommandParameter="{Binding}" />
-        </StackPanel>
+            <!-- Quick actions, revealed on hover (only when the host supplies the commands) -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,196,8,0"
+                        Visibility="{Binding EditCommand, ElementName=Root, Converter={StaticResource NotEmptyToVisible}}">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Opacity" Value="0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                <Setter Property="Opacity" Value="1" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <Button Content="{loc:Loc Common.Edit}" Padding="8,3" FontSize="11" Style="{StaticResource Button.Ghost}"
+                        Command="{Binding EditCommand, ElementName=Root}" CommandParameter="{Binding}" />
+                <Button Content="{loc:Loc Common.Delete}" Padding="8,3" FontSize="11" Margin="6,0,0,0" Style="{StaticResource Button.DangerGhost}"
+                        Command="{Binding DeleteCommand, ElementName=Root}" CommandParameter="{Binding}" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

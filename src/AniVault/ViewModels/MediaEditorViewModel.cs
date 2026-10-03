@@ -40,7 +40,7 @@ public sealed partial class MediaEditorViewModel : ObservableValidator
     [ObservableProperty]
     [NotifyDataErrorInfo]
     [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Title is required.")]
+    [System.ComponentModel.DataAnnotations.Required]
     private string _titleText = string.Empty;
 
     [ObservableProperty]

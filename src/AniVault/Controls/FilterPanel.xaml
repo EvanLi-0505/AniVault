@@ -11,106 +11,137 @@
 
     <Border Style="{StaticResource Card}" Padding="16">
         <StackPanel>
-            <!-- Row 1: search + sort -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged, Delay=250}"
-                         ToolTip="{loc:Loc Filter.SearchTooltip}" />
-                <ComboBox Grid.Column="1" Width="150" Margin="8,0,0,0" SelectedItem="{Binding SortField}"
-                          ItemsSource="{Binding SortFields}" ToolTip="{loc:Loc Filter.SortTooltip}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" /></DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-                <ToggleButton Grid.Column="2" Margin="8,0,0,0" Padding="10,0" MinWidth="42"
-                              IsChecked="{Binding SortDescending}"
-                              Content="{Binding SortDescending, Converter={StaticResource SortDirectionGlyph}}"
-                              ToolTip="{loc:Loc Filter.DirectionTooltip}" />
-            </Grid>
-
-            <!-- Row 2: dropdown filters -->
-            <WrapPanel Margin="0,10,0,0">
-                <StackPanel Margin="0,0,12,8" Visibility="{Binding ShowStatus, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="{loc:Loc Filter.Status}" Style="{StaticResource Text.Muted}" />
-                    <ComboBox Width="150" SelectedItem="{Binding StatusChoice}" ItemsSource="{Binding StatusOptions}"
-                              DisplayMemberPath="Label" />
-                </StackPanel>
-
-                <StackPanel Margin="0,0,12,8">
-                    <TextBlock Text="{loc:Loc Filter.Year}" Style="{StaticResource Text.Muted}" />
-                    <ComboBox Width="110" SelectedItem="{Binding YearChoice}" ItemsSource="{Binding YearOptions}"
-                              DisplayMemberPath="Label" />
-                </StackPanel>
-
-                <StackPanel Margin="0,0,12,8" Visibility="{Binding ShowSeason, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="{loc:Loc Filter.Season}" Style="{StaticResource Text.Muted}" />
-                    <ComboBox Width="110" SelectedItem="{Binding SeasonChoice}" ItemsSource="{Binding SeasonOptions}"
-                              DisplayMemberPath="Label" />
-                </StackPanel>
-
-                <StackPanel Margin="0,0,12,8">
-                    <TextBlock Text="{loc:Loc Filter.Month}" Style="{StaticResource Text.Muted}" />
-                    <ComboBox Width="130" IsEditable="True" StaysOpenOnEdit="True"
-                              Text="{Binding MonthText, UpdateSourceTrigger=PropertyChanged}"
-                              ItemsSource="{Binding MonthOptions}"
-                              ToolTip="{loc:Loc Filter.MonthPlaceholder}" />
-                </StackPanel>
-
-                <StackPanel Margin="0,0,12,8">
-                    <TextBlock Text="{loc:Loc Filter.MinRating}" Style="{StaticResource Text.Muted}" />
-                    <TextBox Width="70" Text="{Binding MinRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
-                </StackPanel>
-            </WrapPanel>
-
-            <!-- Row 3: toggles -->
-            <WrapPanel Margin="0,2,0,0">
-                <CheckBox Content="{loc:Loc Filter.FavoritesOnly}" IsChecked="{Binding FavoriteOnly}" Margin="0,0,16,0"
-                          Visibility="{Binding ShowFavorite, Converter={StaticResource BoolToVisibility}}" />
-                <CheckBox Content="{loc:Loc Filter.LikedOnly}" IsChecked="{Binding LikedOnly}" Margin="0,0,16,0"
-                          Visibility="{Binding ShowLiked, Converter={StaticResource BoolToVisibility}}" />
-                <Button Content="{loc:Loc Filter.Reset}" Style="{StaticResource Button.Ghost}" Padding="10,4"
-                        Command="{Binding ResetCommand}"
-                        Visibility="{Binding HasActiveFilters, Converter={StaticResource BoolToVisibility}}" />
-            </WrapPanel>
-
-            <!-- Row 4: tags -->
-            <StackPanel Margin="0,8,0,0" Visibility="{Binding Tags.Count, Converter={StaticResource PositiveToVisible}}">
+            <!-- Everything except the footer folds away when the panel is collapsed. -->
+            <StackPanel Margin="0,0,0,8"
+                        Visibility="{Binding IsCollapsed, Converter={StaticResource InverseBoolToVisibility}}">
+                <!-- Row 1: search + sort -->
                 <Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{loc:Loc Filter.Tags}" Style="{StaticResource Text.Muted}" VerticalAlignment="Center" />
-                        <TextBlock Style="{StaticResource Text.Muted}" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"
-                                   Text="{Binding SelectedTagCount, StringFormat=' · {0}'}"
-                                   Visibility="{Binding SelectedTagCount, Converter={StaticResource PositiveToVisible}}" />
-                    </StackPanel>
-                    <CheckBox Content="{loc:Loc Filter.MatchAll}" IsChecked="{Binding MatchAllTags}"
-                              HorizontalAlignment="Right" FontSize="11" />
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged, Delay=250}"
+                             ToolTip="{loc:Loc Filter.SearchTooltip}" />
+                    <ComboBox Grid.Column="1" Width="150" Margin="8,0,0,0" SelectedItem="{Binding SortField}"
+                              ItemsSource="{Binding SortFields}" ToolTip="{loc:Loc Filter.SortTooltip}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" /></DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <ToggleButton Grid.Column="2" Margin="8,0,0,0" Padding="10,0" MinWidth="42"
+                                  IsChecked="{Binding SortDescending}"
+                                  Content="{Binding SortDescending, Converter={StaticResource SortDirectionGlyph}}"
+                                  ToolTip="{loc:Loc Filter.DirectionTooltip}" />
                 </Grid>
-                <ItemsControl ItemsSource="{Binding VisibleTags}" Margin="0,4,0,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <ToggleButton Content="{Binding Name}" IsChecked="{Binding IsSelected}"
-                                          Margin="0,0,6,6" Padding="9,3" FontSize="12"
-                                          Style="{StaticResource TagToggle}" />
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,2,0,0"
-                            Visibility="{Binding TagPagingVisible, Converter={StaticResource BoolToVisibility}}">
-                    <Button Content="‹" Style="{StaticResource Button.Ghost}" Padding="10,2" MinWidth="0"
-                            Command="{Binding PrevTagPageCommand}" />
-                    <TextBlock Text="{Binding TagPageLabel}" Style="{StaticResource Text.Muted}" FontSize="11"
-                               VerticalAlignment="Center" Margin="8,0" />
-                    <Button Content="›" Style="{StaticResource Button.Ghost}" Padding="10,2" MinWidth="0"
-                            Command="{Binding NextTagPageCommand}" />
+
+                <!-- Row 2: dropdown filters -->
+                <WrapPanel Margin="0,10,0,0">
+                    <StackPanel Margin="0,0,12,8" Visibility="{Binding ShowStatus, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{loc:Loc Filter.Status}" Style="{StaticResource Text.Muted}" />
+                        <ComboBox Width="150" SelectedItem="{Binding StatusChoice}" ItemsSource="{Binding StatusOptions}"
+                                  DisplayMemberPath="Label" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,12,8">
+                        <TextBlock Text="{loc:Loc Filter.Year}" Style="{StaticResource Text.Muted}" />
+                        <ComboBox Width="110" SelectedItem="{Binding YearChoice}" ItemsSource="{Binding YearOptions}"
+                                  DisplayMemberPath="Label" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,12,8" Visibility="{Binding ShowSeason, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{loc:Loc Filter.Season}" Style="{StaticResource Text.Muted}" />
+                        <ComboBox Width="110" SelectedItem="{Binding SeasonChoice}" ItemsSource="{Binding SeasonOptions}"
+                                  DisplayMemberPath="Label" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,12,8">
+                        <TextBlock Text="{loc:Loc Filter.Month}" Style="{StaticResource Text.Muted}" />
+                        <ComboBox Width="130" IsEditable="True" StaysOpenOnEdit="True"
+                                  Text="{Binding MonthText, UpdateSourceTrigger=PropertyChanged}"
+                                  ItemsSource="{Binding MonthOptions}"
+                                  ToolTip="{loc:Loc Filter.MonthPlaceholder}" />
+                    </StackPanel>
+
+                    <StackPanel Margin="0,0,12,8">
+                        <TextBlock Text="{loc:Loc Filter.MinRating}" Style="{StaticResource Text.Muted}" />
+                        <TextBox Width="70" Text="{Binding MinRating, TargetNullValue='', UpdateSourceTrigger=LostFocus}" />
+                    </StackPanel>
+                </WrapPanel>
+
+                <!-- Row 3: toggles -->
+                <WrapPanel Margin="0,2,0,0">
+                    <CheckBox Content="{loc:Loc Filter.FavoritesOnly}" IsChecked="{Binding FavoriteOnly}" Margin="0,0,16,0"
+                              Visibility="{Binding ShowFavorite, Converter={StaticResource BoolToVisibility}}" />
+                    <CheckBox Content="{loc:Loc Filter.LikedOnly}" IsChecked="{Binding LikedOnly}" Margin="0,0,16,0"
+                              Visibility="{Binding ShowLiked, Converter={StaticResource BoolToVisibility}}" />
+                    <Button Content="{loc:Loc Filter.Reset}" Style="{StaticResource Button.Ghost}" Padding="10,4"
+                            Command="{Binding ResetCommand}"
+                            Visibility="{Binding HasActiveFilters, Converter={StaticResource BoolToVisibility}}" />
+                </WrapPanel>
+
+                <!-- Row 4: tags -->
+                <StackPanel Margin="0,8,0,0" Visibility="{Binding Tags.Count, Converter={StaticResource PositiveToVisible}}">
+                    <Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{loc:Loc Filter.Tags}" Style="{StaticResource Text.Muted}" VerticalAlignment="Center" />
+                            <TextBlock Style="{StaticResource Text.Muted}" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"
+                                       Text="{Binding SelectedTagCount, StringFormat=' · {0}'}"
+                                       Visibility="{Binding SelectedTagCount, Converter={StaticResource PositiveToVisible}}" />
+                        </StackPanel>
+                        <CheckBox Content="{loc:Loc Filter.MatchAll}" IsChecked="{Binding MatchAllTags}"
+                                  HorizontalAlignment="Right" FontSize="11" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding VisibleTags}" Margin="0,4,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Content="{Binding Name}" IsChecked="{Binding IsSelected}"
+                                              Margin="0,0,6,6" Padding="9,3" FontSize="12"
+                                              Style="{StaticResource TagToggle}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </StackPanel>
+
+            <!-- Footer: always visible, so the panel can always be brought back. The show/hide
+                 button stays put at the bottom-left; the tag pager shares the row when expanded. -->
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button Style="{StaticResource Button.Ghost}" Padding="10,3" FontSize="12"
+                            Command="{Binding ToggleCollapsedCommand}">
+                        <Grid>
+                            <TextBlock Text="{loc:Loc Filter.Hide}" FontSize="12"
+                                       Visibility="{Binding IsCollapsed, Converter={StaticResource InverseBoolToVisibility}}" />
+                            <TextBlock Text="{loc:Loc Filter.Show}" FontSize="12"
+                                       Visibility="{Binding IsCollapsed, Converter={StaticResource BoolToVisibility}}" />
+                        </Grid>
+                    </Button>
+                    <!-- A hidden panel that is still filtering would otherwise look like missing items. -->
+                    <StackPanel Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center"
+                                Visibility="{Binding IsCollapsed, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{loc:Loc Filter.ActiveWhileHidden}" Style="{StaticResource Text.Muted}"
+                                   VerticalAlignment="Center"
+                                   Visibility="{Binding HasActiveFilters, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Visibility="{Binding IsCollapsed, Converter={StaticResource InverseBoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding TagPagingVisible, Converter={StaticResource BoolToVisibility}}">
+                        <Button Content="‹" Style="{StaticResource Button.Ghost}" Padding="10,2" MinWidth="0"
+                                Command="{Binding PrevTagPageCommand}" />
+                        <TextBlock Text="{Binding TagPageLabel}" Style="{StaticResource Text.Muted}" FontSize="11"
+                                   VerticalAlignment="Center" Margin="8,0" />
+                        <Button Content="›" Style="{StaticResource Button.Ghost}" Padding="10,2" MinWidth="0"
+                                Command="{Binding NextTagPageCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
         </StackPanel>
     </Border>
 </UserControl>

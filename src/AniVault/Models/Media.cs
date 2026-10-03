@@ -9,8 +9,8 @@ namespace AniVault.Models;
 /// Fields are grouped into two conceptual categories:
 ///   * Provider-owned metadata (Title, Description, air dates, EpisodeCount, poster paths, ...)
 ///     — these may be overwritten by a future "Refresh Metadata" action.
-///   * Personal data (MyRating, IsFavorite, IsLiked, ShowOnHome, Status, Notes, watched
-///     episodes, tags) — these must NEVER be overwritten by an online provider.
+///   * Personal data (MyRating, IsFavorite, IsLiked, ShowOnHome, EpisodeListHidden, Status,
+///     Notes, watched episodes, tags) — these must NEVER be overwritten by an online provider.
 /// </summary>
 public class Media
 {
@@ -85,6 +85,13 @@ public class Media
     /// refresh. Defaults to true so existing and newly added items show up as before.
     /// </summary>
     public bool ShowOnHome { get; set; } = true;
+
+    /// <summary>
+    /// Whether the detail page folds this item's episode checklist away (e.g. once everything is
+    /// watched). Purely a personal display preference: the episodes and their watched state are
+    /// untouched, and a provider refresh never changes it.
+    /// </summary>
+    public bool EpisodeListHidden { get; set; }
 
     /// <summary>Local-only personal notes. Never sent to any online API.</summary>
     public string? Notes { get; set; }

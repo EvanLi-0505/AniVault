@@ -16,11 +16,6 @@ namespace AniVault.Services;
 /// </summary>
 public interface IMediaService
 {
-    Task<IReadOnlyList<Media>> GetLibraryAsync(
-        MediaType mediaType,
-        string? searchText = null,
-        CancellationToken cancellationToken = default);
-
     Task<Media?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>Every media item with episodes, tags and external ids loaded. Used by export.</summary>
@@ -47,6 +42,13 @@ public interface IMediaService
 
     Task SetRatingAsync(int mediaId, double? rating, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Shows or hides the item's episode checklist on the detail page. Deliberately does not bump
+    /// <see cref="Media.UpdatedAt"/> — folding a list away is not an edit, and should not reshuffle
+    /// a library sorted by "last updated".
+    /// </summary>
+    Task SetEpisodeListHiddenAsync(int mediaId, bool hidden, CancellationToken cancellationToken = default);
+
     /// <summary>Marks a single episode watched/unwatched and stamps <see cref="Episode.WatchedAt"/>.</summary>
     Task SetEpisodeWatchedAsync(int episodeId, bool isWatched, CancellationToken cancellationToken = default);
 
@@ -64,32 +66,6 @@ public sealed class MediaService : IMediaService
     public MediaService(IDbContextFactory<AppDbContext> contextFactory)
     {
         _contextFactory = contextFactory;
-    }
-
-    public async Task<IReadOnlyList<Media>> GetLibraryAsync(
-        MediaType mediaType,
-        string? searchText = null,
-        CancellationToken cancellationToken = default)
-    {
-        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
-
-        IQueryable<Media> query = db.Media
-            .AsNoTracking()
-            .Where(m => m.MediaType == mediaType);
-
-        if (!string.IsNullOrWhiteSpace(searchText))
-        {
-            var term = searchText.Trim();
-            query = query.Where(m =>
-                EF.Functions.Like(m.Title, $"%{term}%")
-                || (m.OriginalTitle != null && EF.Functions.Like(m.OriginalTitle, $"%{term}%"))
-                || (m.AlternativeTitles != null && EF.Functions.Like(m.AlternativeTitles, $"%{term}%"))
-                || (m.Description != null && EF.Functions.Like(m.Description, $"%{term}%")));
-        }
-
-        return await query
-            .OrderByDescending(m => m.UpdatedAt)
-            .ToListAsync(cancellationToken);
     }
 
     public async Task<Media?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -204,6 +180,14 @@ public sealed class MediaService : IMediaService
 
     public Task SetRatingAsync(int mediaId, double? rating, CancellationToken cancellationToken = default)
         => MutateMediaAsync(mediaId, m => m.MyRating = rating is null ? null : Math.Clamp(rating.Value, 0d, 10d), cancellationToken);
+
+    public async Task SetEpisodeListHiddenAsync(int mediaId, bool hidden, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await db.Media
+            .Where(m => m.Id == mediaId)
+            .ExecuteUpdateAsync(set => set.SetProperty(m => m.EpisodeListHidden, hidden), cancellationToken);
+    }
 
     public async Task SetEpisodeWatchedAsync(int episodeId, bool isWatched, CancellationToken cancellationToken = default)
     {

@@ -40,18 +40,6 @@ public sealed record MediaFilter
 
     /// <summary>true = item must have every listed tag; false = any one is enough.</summary>
     public bool MatchAllTags { get; init; } = true;
-
-    public bool HasAnyCondition =>
-        MediaType is not null
-        || !string.IsNullOrWhiteSpace(Text)
-        || Status is not null
-        || Year is not null
-        || Season is not null
-        || Month is not null
-        || IsFavorite is not null
-        || IsLiked is not null
-        || MinRating is not null
-        || TagIds.Count > 0;
 }
 
 /// <summary>Fields the library can be ordered by.</summary>

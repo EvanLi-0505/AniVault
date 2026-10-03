@@ -24,5 +24,5 @@ public static class SettingKeys
     public const string CustomProvider = "metadata.customProvider";
     public const string OnlineSearchEnabled = "network.onlineSearchEnabled";
     public const string PosterDownloadEnabled = "network.posterDownloadEnabled";
-    public const string SchemaNote = "schema.note";
+    public const string FilterPanelCollapsed = "ui.filterPanelCollapsed";
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
@@ -48,33 +47,6 @@ public sealed class NullOrEmptyToVisibilityConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
-/// <summary>Visible when a collection is null or has no items; Collapsed otherwise. Drives empty-state panels.</summary>
-public sealed class EmptyCollectionToVisibilityConverter : IValueConverter
-{
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is null)
-        {
-            return Visibility.Visible;
-        }
-
-        if (value is ICollection collection)
-        {
-            return collection.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        if (value is IEnumerable enumerable)
-        {
-            return enumerable.GetEnumerator().MoveNext() ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        return Visibility.Collapsed;
-    }
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => throw new NotSupportedException();
-}
-
 /// <summary>Inverse of the built-in BooleanToVisibilityConverter: true =&gt; Collapsed.</summary>
 public sealed class InverseBoolToVisibilityConverter : IValueConverter
 {
@@ -102,7 +74,11 @@ public sealed class WatchStatusToBrushConverter : IValueConverter
 public sealed class ApiKeyStatusConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value is true ? "An API key is saved (encrypted)." : "No API key saved yet.";
+    {
+        var saved = value is true;
+        return LocalizationService.Instance?.Text(saved ? "Settings.ApiKeySaved" : "Settings.ApiKeyNone")
+            ?? (saved ? "An API key is saved (encrypted)." : "No API key saved yet.");
+    }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();

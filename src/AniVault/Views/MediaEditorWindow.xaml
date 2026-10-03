@@ -200,7 +200,7 @@
                         <Border Style="{StaticResource Card}" Height="180" Width="128" HorizontalAlignment="Left" ClipToBounds="True">
                             <Grid>
                                 <TextBlock Text="{loc:Loc Editor.NoPoster}" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource Text.Muted}" />
-                                <Image Source="{Binding PosterDisplayPath}" Stretch="UniformToFill"
+                                <Image Source="{Binding PosterDisplayPath, TargetNullValue={x:Null}}" Stretch="UniformToFill"
                                        Visibility="{Binding PosterDisplayPath, Converter={StaticResource NotEmptyToVisible}}" />
                             </Grid>
                         </Border>
@@ -215,7 +215,7 @@
                         <Border Style="{StaticResource Card}" Height="120" ClipToBounds="True">
                             <Grid>
                                 <TextBlock Text="{loc:Loc Editor.NoBackdrop}" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource Text.Muted}" />
-                                <Image Source="{Binding BackdropDisplayPath}" Stretch="UniformToFill"
+                                <Image Source="{Binding BackdropDisplayPath, TargetNullValue={x:Null}}" Stretch="UniformToFill"
                                        Visibility="{Binding BackdropDisplayPath, Converter={StaticResource NotEmptyToVisible}}" />
                             </Grid>
                         </Border>

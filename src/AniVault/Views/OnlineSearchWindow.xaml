@@ -70,7 +70,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Border Grid.Column="0" Width="46" Height="64" CornerRadius="4" ClipToBounds="True"
                                         Background="{DynamicResource Brush.SurfaceAlt}">
-                                    <Image Source="{Binding PosterUrl}" Stretch="UniformToFill" />
+                                    <Image Source="{Binding PosterUrl, TargetNullValue={x:Null}}" Stretch="UniformToFill" />
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
@@ -103,7 +103,7 @@
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Width="120" Height="170" CornerRadius="8" ClipToBounds="True"
                                     Background="{DynamicResource Brush.SurfaceAlt}">
-                                <Image Source="{Binding PreviewPosterUrl}" Stretch="UniformToFill" />
+                                <Image Source="{Binding PreviewPosterUrl, TargetNullValue={x:Null}}" Stretch="UniformToFill" />
                             </Border>
                             <StackPanel Grid.Column="1" Margin="14,0,0,0">
                                 <TextBlock Text="{Binding PreviewTitle}" Style="{StaticResource Text.Subheading}" TextWrapping="Wrap" />

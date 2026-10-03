@@ -64,6 +64,7 @@ public sealed partial class FilterPanelViewModel : ObservableObject
 
     private readonly IMediaQueryService _queryService;
     private readonly ITagService _tagService;
+    private readonly ISettingsService _settings;
     private readonly ILocalizationService _loc;
     private bool _suspend;
 
@@ -90,10 +91,19 @@ public sealed partial class FilterPanelViewModel : ObservableObject
     [ObservableProperty] private bool _showLiked = true;
     [ObservableProperty] private bool _showSeason = true;
 
-    public FilterPanelViewModel(IMediaQueryService queryService, ITagService tagService, ILocalizationService loc)
+    /// <summary>
+    /// Whether the panel is folded down to just its show/hide button. A view preference, not a
+    /// filter: collapsing never changes what <see cref="BuildFilter"/> emits, and it is remembered
+    /// app-wide (every browse page shares the one setting) rather than per page.
+    /// </summary>
+    [ObservableProperty] private bool _isCollapsed;
+
+    public FilterPanelViewModel(
+        IMediaQueryService queryService, ITagService tagService, ISettingsService settings, ILocalizationService loc)
     {
         _queryService = queryService;
         _tagService = tagService;
+        _settings = settings;
         _loc = loc;
 
         _suspend = true;
@@ -209,6 +219,8 @@ public sealed partial class FilterPanelViewModel : ObservableObject
     {
         _suspend = true;
 
+        IsCollapsed = await _settings.GetBoolAsync(SettingKeys.FilterPanelCollapsed, false);
+
         var keepYear = Year;
         YearOptions.Clear();
         YearOptions.Add(new FilterChoice<int>(null, _loc.Text("Common.Any")));
@@ -274,6 +286,13 @@ public sealed partial class FilterPanelViewModel : ObservableObject
 
         _suspend = wasSuspended;
         RaiseChanged();
+    }
+
+    [RelayCommand]
+    private async Task ToggleCollapsed()
+    {
+        IsCollapsed = !IsCollapsed;
+        await _settings.SetAsync(SettingKeys.FilterPanelCollapsed, IsCollapsed.ToString());
     }
 
     [RelayCommand(CanExecute = nameof(CanPrevTagPage))]

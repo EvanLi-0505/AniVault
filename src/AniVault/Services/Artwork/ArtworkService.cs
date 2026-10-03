@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -177,13 +176,7 @@ public sealed class ArtworkService : IArtworkService
             return thumb;
         }
 
-        var sw = Stopwatch.StartNew();
         var built = await ImageLoading.SaveThumbnailAsync(poster, thumb, ThumbnailWidth);
-        sw.Stop();
-        _logger.LogInformation(
-            "Regenerated thumbnail for media {MediaId} (cache was missing/stale) in {ElapsedMs} ms.",
-            media.Id, sw.ElapsedMilliseconds);
-
         return built ? thumb : poster;
     }
 

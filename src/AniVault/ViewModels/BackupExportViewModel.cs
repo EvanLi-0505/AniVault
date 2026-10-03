@@ -53,8 +53,6 @@ public sealed partial class BackupExportViewModel : ObservableObject
         _logger = logger;
     }
 
-    public string DefaultBackupFolder => _paths.IsConfigured ? _paths.BackupsDirectory : _loc.Text("Common.NotConfigured");
-
     [RelayCommand(CanExecute = nameof(NotWorking))]
     private async Task CreateBackup()
     {

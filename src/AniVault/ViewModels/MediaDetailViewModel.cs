@@ -59,7 +59,13 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
     [ObservableProperty] private ImageSource? _backdrop;
     [ObservableProperty] private bool _hasBackdrop;
     [ObservableProperty] private string _episodeProgressLabel = string.Empty;
-    [ObservableProperty] private bool _hasEpisodes;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowEpisodeList))]
+    private bool _hasEpisodes;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowEpisodeList))]
+    private bool _episodeListHidden;
     [ObservableProperty] private bool _canGenerateEpisodes;
     [ObservableProperty] private bool _showCompleteSuggestion;
     [ObservableProperty] private bool _canRefreshMetadata;
@@ -92,6 +98,9 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
     }
 
     public ObservableCollection<EpisodeRowViewModel> Episodes { get; } = new();
+
+    /// <summary>The checklist itself; the section header and progress count stay visible either way.</summary>
+    public bool ShowEpisodeList => HasEpisodes && !EpisodeListHidden;
 
     /// <summary>Tag chips; clicking one opens a filtered view.</summary>
     public ObservableCollection<TagLink> Tags { get; } = new();
@@ -177,6 +186,7 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
         var watched = media.Episodes.Count(e => e.IsWatched);
         var total = media.EpisodeCount ?? media.Episodes.Count;
         HasEpisodes = media.Episodes.Count > 0;
+        EpisodeListHidden = media.EpisodeListHidden;
         CanGenerateEpisodes = !HasEpisodes && media.EpisodeCount is > 0;
         EpisodeProgressLabel = total > 0
             ? _loc.Format("Detail.EpisodeProgressFormat", watched, total)
@@ -239,6 +249,19 @@ public sealed partial class MediaDetailViewModel : ViewModelBase
 
     [RelayCommand]
     private void GoBack() => _navigation.GoBack();
+
+    [RelayCommand]
+    private Task ToggleEpisodeList()
+    {
+        if (_media is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        EpisodeListHidden = !EpisodeListHidden;
+        _media.EpisodeListHidden = EpisodeListHidden;
+        return RunAsync(() => _mediaService.SetEpisodeListHiddenAsync(_media.Id, EpisodeListHidden));
+    }
 
     private async Task RefreshCanRefreshAsync(Media media)
     {

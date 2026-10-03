@@ -1,6 +1,6 @@
 # Implementation status
 
-**Shipped as 1.6.1.** Everything below this line has landed, been build/test-verified (0
+**Shipped as 1.9.0.** Everything below this line has landed, been build/test-verified (0
 warnings, 0 errors), and smoke-tested on both the dev build and the packaged portable exe /
 installer. See `CLAUDE.md` for the short version and the hard constraints.
 
@@ -378,13 +378,59 @@ docs/ARCHITECTURE.md → "Adding a pluggable subsystem" for the pattern and for 
 network-touching feature would specifically need to respect (its own settings switch, its own
 explicit button, never automatic — same rule `Metadata/` already follows).
 
+### 1.9.0 — browsing polish, old-backup guarantee, dead-code sweep — *requested*
+- **Poster-card hover flicker fixed.** The card lifted itself 3px on hover, which moved the
+  card's own bottom edge out from under a pointer resting near a bottom corner → MouseLeave →
+  drop back → MouseEnter → … `MediaCard` is now a static transparent hit target (never moves)
+  wrapping an inner `CardBody` that takes the lift; the border highlight keys off the
+  UserControl's `IsMouseOver` instead of the Button's.
+- **Tooltips are themed.** The app-wide implicit `TextBlock` style (light text) leaked into the
+  stock light-yellow tooltip → near-invisible white-on-white titles. `Controls.xaml` now has an
+  implicit `ToolTip` style (`Brush.SurfaceAlt` / `Brush.TextPrimary` / `Brush.Border`, wraps at
+  420px), so every tooltip follows the light/dark theme.
+- **Collapsible filter panel.** A "▲ Hide filters / ▼ Show filters" button sits bottom-left of the
+  panel in an always-visible footer row (it is never hidden itself). Collapsing only hides the
+  inputs — the filters stay applied, and a "Filters are still applied" hint shows next to the
+  button when any are active. The choice is one app-wide setting (`ui.filterPanelCollapsed`), so
+  it survives page changes and restarts.
+- **Hideable episode list.** The detail page's Episodes header has a "Hide list / Show list"
+  toggle; the choice is stored per title in the new `Media.EpisodeListHidden` column (migration
+  `AddEpisodeListHidden`, default false). It is personal data: provider refresh never touches it,
+  and toggling it does not bump `UpdatedAt` (it must not reshuffle "recently updated" sorting).
+  The watched-progress label stays visible while the list is hidden.
+- **Poster skeleton.** `MediaCardViewModel.IsPosterLoading` drives a pulsing placeholder on the
+  poster area only (opacity animation, 30fps, stopped the moment the image lands, then a 180ms
+  fade-in). A poster already in the in-memory image cache completes synchronously, so revisiting
+  a page shows no skeleton at all; a title without a poster goes straight to "No poster".
+- **Old backups keep working.** `BackupServiceTests` now builds a database at the 1.8.0 schema
+  with raw SQL, zips it as a backup, restores it and runs the startup migration — every personal
+  field, episode, tag and artwork file survives and `EpisodeListHidden` defaults to false. The
+  same path was also run once against a real 1.8.0 backup (482 titles / 489 tags / 190 episodes /
+  482 poster files: all present after restore + migrate). Backups are whole-database copies and
+  `DatabaseInitializer` migrates on every start, so any older backup is upgraded on first launch.
+- **Dead-code sweep** (cross-checked with a reference scan and an IDE0051/52/59/60 analyzer pass,
+  which came back clean afterwards): removed the never-navigated `PlaceholderViewModel` /
+  `PlaceholderView`; `IMediaService.GetLibraryAsync` (superseded by `MediaQueryService`; only its
+  own two tests called it); the temporary `Loaded filter options` / `Built` / `Rendered` /
+  `Regenerated thumbnail` timing logs left from the 1.6.x perf investigation (which also removes
+  the `Dispatcher` reference from `LibraryViewModel`); five unused `MediaCardViewModel` members;
+  `EmptyCollectionToVisibilityConverter`; `MediaFilter.HasAnyCondition`;
+  `BackupExportViewModel.DefaultBackupFolder`; `SettingKeys.SchemaNote`; eight unreferenced string
+  keys. Also fixed along the way: the API-key status line in Settings and the card's Edit/Delete
+  quick buttons were hard-coded English (now localized), and the editor / online-search image
+  bindings no longer log an `ImageSourceConverter` warning for a missing image — the smoke log is
+  now completely warning-free.
+- Redundant explicit `using System…;` lines (implicit usings are on) were deliberately left: they
+  are the file convention everywhere and cost nothing at runtime.
+
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 138 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 142 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, editor category override + save + Anime-field clearing on switch +
   artwork relocation on category switch, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip + progress reporting +
-  stale-tmp cleanup,
+  stale-tmp cleanup + restore-and-upgrade of a previous-schema backup, filter-panel collapse
+  persistence, episode-list-hidden persistence, poster-skeleton state,
   Markdown export, combined query filters + sort incl. month + show-on-home, filter-panel choice
   round-trip + month free-text parsing + tag paging + silent-vs-firing bulk update, rating-calculator maths, single-instance
   guard, tag service incl. `SortOrder` ordering + reorder + append-at-end, tags-page pagination +

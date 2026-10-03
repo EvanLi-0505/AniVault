@@ -155,8 +155,20 @@
             <Border Style="{StaticResource Card}" Padding="18" Margin="0,16,0,0">
                 <StackPanel>
                     <Grid>
-                        <TextBlock Text="{loc:Loc Detail.Episodes}" Style="{StaticResource Text.Subheading}" />
-                        <TextBlock Text="{Binding EpisodeProgressLabel}" Style="{StaticResource Text.Muted}" HorizontalAlignment="Right" />
+                        <TextBlock Text="{loc:Loc Detail.Episodes}" Style="{StaticResource Text.Subheading}" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding EpisodeProgressLabel}" Style="{StaticResource Text.Muted}" VerticalAlignment="Center" />
+                            <Button Margin="12,0,0,0" Padding="10,3" Style="{StaticResource Button.Ghost}"
+                                    Command="{Binding ToggleEpisodeListCommand}"
+                                    Visibility="{Binding HasEpisodes, Converter={StaticResource BoolToVisibility}}">
+                                <Grid>
+                                    <TextBlock Text="{loc:Loc Detail.HideEpisodeList}" FontSize="12"
+                                               Visibility="{Binding EpisodeListHidden, Converter={StaticResource InverseBoolToVisibility}}" />
+                                    <TextBlock Text="{loc:Loc Detail.ShowEpisodeList}" FontSize="12"
+                                               Visibility="{Binding EpisodeListHidden, Converter={StaticResource BoolToVisibility}}" />
+                                </Grid>
+                            </Button>
+                        </StackPanel>
                     </Grid>
 
                     <Button Content="{loc:Loc Detail.CreateEpisodeList}" Margin="0,12,0,0" HorizontalAlignment="Left"
@@ -168,7 +180,7 @@
                                Visibility="{Binding HasEpisodes, Converter={StaticResource InverseBoolToVisibility}}" />
 
                     <ItemsControl ItemsSource="{Binding Episodes}" Margin="0,10,0,0"
-                                  Visibility="{Binding HasEpisodes, Converter={StaticResource BoolToVisibility}}">
+                                  Visibility="{Binding ShowEpisodeList, Converter={StaticResource BoolToVisibility}}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel Orientation="Horizontal" />

@@ -92,7 +92,7 @@ public class LibraryViewModelTests
         var settings = new SettingsService(lib);
         var loc = new LocalizationService(settings);
         var tagService = new TagService(lib);
-        var filters = new FilterPanelViewModel(new MediaQueryService(lib), tagService, loc);
+        var filters = new FilterPanelViewModel(new MediaQueryService(lib), tagService, settings, loc);
         var artwork = new ArtworkService(lib, lib.Paths, NullLogger<ArtworkService>.Instance);
 
         var vm = new LibraryViewModel(

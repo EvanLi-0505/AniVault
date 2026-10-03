@@ -28,6 +28,8 @@ AniVault-startup-error.txt
 *.db-shm
 *.db-wal
 *.designtime.db
+AniVault_Backup_*.zip
+AniVault_Backup_*.zip.tmp
 
 # ---- Distribution artifacts: binaries belong in GitHub Releases, not the repo ----
 dist/*

@@ -8,7 +8,10 @@ namespace AniVault.Tests;
 public class FilterPanelViewModelTests
 {
     private static FilterPanelViewModel Create(TestDatabase db)
-        => new(new MediaQueryService(db), new TagService(db), new LocalizationService(new SettingsService(db)));
+    {
+        var settings = new SettingsService(db);
+        return new FilterPanelViewModel(new MediaQueryService(db), new TagService(db), settings, new LocalizationService(settings));
+    }
 
     [Fact]
     public async Task Year_Can_Be_Set_To_A_Value_And_Back_To_All()
@@ -127,6 +130,30 @@ public class FilterPanelViewModelTests
         vm.EndUpdate();
         Assert.Equal(1, changes);
         Assert.Equal(WatchStatus.Completed, vm.Status);
+    }
+
+    [Fact]
+    public async Task Collapsing_Is_Remembered_By_The_Next_Panel_And_Is_Not_A_Filter_Change()
+    {
+        using var db = new TestDatabase();
+        var vm = Create(db);
+        await vm.LoadOptionsAsync(null);
+        Assert.False(vm.IsCollapsed);
+
+        vm.Status = WatchStatus.Watching;
+        var changes = 0;
+        vm.Changed += (_, _) => changes++;
+
+        await vm.ToggleCollapsedCommand.ExecuteAsync(null);
+
+        Assert.True(vm.IsCollapsed);
+        Assert.Equal(0, changes);
+        Assert.Equal(WatchStatus.Watching, vm.BuildFilter(null).Status);
+
+        // Every browse page builds its own panel; they all share the one remembered setting.
+        var next = Create(db);
+        await next.LoadOptionsAsync(MediaType.Anime);
+        Assert.True(next.IsCollapsed);
     }
 
     [Fact]

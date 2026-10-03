@@ -134,7 +134,6 @@ internal static class ServiceCollectionExtensions
         services.AddTransient<RatingCalculatorViewModel>();
         services.AddTransient<OnlineSearchViewModel>();
         services.AddTransient<CompressArtworkViewModel>();
-        services.AddTransient<PlaceholderViewModel>();
         services.AddTransient<MediaEditorViewModel>();
         services.AddTransient<TagPickerViewModel>();
         services.AddTransient<FilterPanelViewModel>();

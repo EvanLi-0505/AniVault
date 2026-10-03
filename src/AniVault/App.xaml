@@ -21,9 +21,6 @@
             <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
                 <views:SettingsView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
-                <views:PlaceholderView />
-            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:MediaDetailViewModel}">
                 <views:MediaDetailView />
             </DataTemplate>

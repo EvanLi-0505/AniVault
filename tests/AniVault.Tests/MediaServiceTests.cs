@@ -36,6 +36,24 @@ public class MediaServiceTests
     }
 
     [Fact]
+    public async Task SetEpisodeListHiddenAsync_Persists_Without_Touching_UpdatedAt_Or_Episodes()
+    {
+        using var database = new TestDatabase();
+        var service = new MediaService(database);
+        var media = await SeedAsync(service, MediaType.Anime, "Frieren");
+        await service.SyncEpisodeListAsync(media.Id, 3);
+        var before = await service.GetByIdAsync(media.Id);
+        Assert.False(before!.EpisodeListHidden);
+
+        await service.SetEpisodeListHiddenAsync(media.Id, true);
+
+        var after = await service.GetByIdAsync(media.Id);
+        Assert.True(after!.EpisodeListHidden);
+        Assert.Equal(before.UpdatedAt, after.UpdatedAt);
+        Assert.Equal(3, after.Episodes.Count);
+    }
+
+    [Fact]
     public async Task GetRecentlyAddedAsync_Excludes_Items_Hidden_From_Home()
     {
         using var database = new TestDatabase();
@@ -61,38 +79,6 @@ public class MediaServiceTests
         Assert.True(created.Id > 0);
         Assert.NotEqual(default, created.CreatedAt);
         Assert.Equal(created.CreatedAt, created.UpdatedAt);
-    }
-
-    [Fact]
-    public async Task GetLibraryAsync_Filters_By_MediaType()
-    {
-        using var database = new TestDatabase();
-        var service = new MediaService(database);
-        await SeedAsync(service, MediaType.Anime, "Bocchi the Rock!");
-        await SeedAsync(service, MediaType.Movie, "Your Name");
-        await SeedAsync(service, MediaType.TvSeries, "Breaking Bad");
-
-        var anime = await service.GetLibraryAsync(MediaType.Anime);
-
-        Assert.Single(anime);
-        Assert.Equal("Bocchi the Rock!", anime[0].Title);
-    }
-
-    [Fact]
-    public async Task GetLibraryAsync_Search_Matches_Title_And_Description()
-    {
-        using var database = new TestDatabase();
-        var service = new MediaService(database);
-        await SeedAsync(service, MediaType.Anime, "Frieren", "A fantasy adventure about an elf mage.");
-        await SeedAsync(service, MediaType.Anime, "Vinland Saga", "A historical drama.");
-
-        var byTitle = await service.GetLibraryAsync(MediaType.Anime, "frieren");
-        var byDescription = await service.GetLibraryAsync(MediaType.Anime, "historical");
-
-        Assert.Single(byTitle);
-        Assert.Equal("Frieren", byTitle[0].Title);
-        Assert.Single(byDescription);
-        Assert.Equal("Vinland Saga", byDescription[0].Title);
     }
 
     [Fact]
