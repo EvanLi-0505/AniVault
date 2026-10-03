@@ -1,6 +1,6 @@
 # Implementation status
 
-**Shipped as 1.9.0.** Everything below this line has landed, been build/test-verified (0
+**Shipped as 1.9.1.** Everything below this line has landed, been build/test-verified (0
 warnings, 0 errors), and smoke-tested on both the dev build and the packaged portable exe /
 installer. See `CLAUDE.md` for the short version and the hard constraints.
 
@@ -73,8 +73,8 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - `build/publish.ps1`: self-contained, single-file, compressed **win-x64** publish →
   `dist/AniVault-<version>-win-x64-portable.zip` (one `AniVault.exe`, no .NET needed).
 - `build/make-installer.ps1` + `build/installer/AniVault.iss`: optional per-user installer
-  (`dist/AniVault-<version>-Setup.exe`) — no admin prompt, Start-menu shortcut, clean uninstall,
-  never touches the user's data folder.
+  (`dist/AniVault-<version>-Setup.exe`) — no admin prompt, Start-menu shortcut, never touches the user's
+  data folder. (Since 1.9.1 it ships no uninstaller — see "1.9.1" below.)
 - `dist/SHA256SUMS.txt`; `dist/` git-ignored (binaries → GitHub Releases).
 - `.github/workflows/ci.yml` (build+test) and `release.yml` (tag `v*` → build + attach to Release).
 - Verified: portable exe and installed exe both launch offline, migrate, show UI; install→run→uninstall cycle clean.
@@ -422,6 +422,31 @@ explicit button, never automatic — same rule `Metadata/` already follows).
   now completely warning-free.
 - Redundant explicit `using System…;` lines (implicit usings are on) were deliberately left: they
   are the file convention everywhere and cost nothing at runtime.
+
+### 1.9.1 — taskbar icon for the portable build, uninstaller-free installer — *requested*
+- **Taskbar icon.** Reported: the unzipped portable exe showed a generic icon on the taskbar,
+  the installed copy showed the right one — same exe. Measured on the user's machine: the
+  Windows 11 taskbar does not use a window's own icon unless the process has an explicit
+  AppUserModelID; it resolves the icon from the shortcut that launched the app, or else from the
+  shell icon cache for the exe path (a window given AniVault's icon inside `powershell.exe` still
+  showed the PowerShell icon; with an explicit id it showed AniVault's). So the installed copy
+  was fine because of its shortcut, and the portable copy depended on whatever the icon cache
+  held for that path. `App.TaskbarIdentity.cs` now sets the AppUserModelID `AniVault.AniVault`
+  before any window exists and gives every window its icon from an assembly resource, so the
+  taskbar icon no longer depends on the launch method or the icon cache. The installer's
+  shortcuts carry the same id (otherwise a pinned shortcut and the running window would be two
+  separate taskbar buttons). Before/after check: launched through a shortcut that deliberately
+  carries a wrong (star) icon, 1.9.0 shows the star on the taskbar and 1.9.1 shows AniVault's
+  icon. The user's exact generic-icon state could not be reproduced from a fresh extraction, so
+  the fix is verified as a mechanism rather than against their folder.
+- **Installer without an uninstaller** (the user's choice: the install folder should look like
+  the ZIP). `Uninstallable=no`: no `unins000.*`, no "Installed apps" entry, no uninstall shortcut;
+  the folder holds `AniVault.exe` + `README.txt` (plus the `anivault.config.json` pointer the app
+  writes on first run). `README.txt` is now one shared file for ZIP and installer and explains
+  removal: delete the folder and shortcuts; the data folder is never deleted automatically.
+  Upgrading over a pre-1.9.1 install removes the old uninstaller files, its Start-menu shortcut
+  and its registry entry (checked with a renamed test build installed silently into a scratch
+  folder seeded with stand-in `unins000.*` files and a stand-in registry key).
 
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.

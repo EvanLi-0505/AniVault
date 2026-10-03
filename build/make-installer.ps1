@@ -2,7 +2,7 @@
     Builds the optional Windows installer (dist/AniVault-<version>-Setup.exe) with Inno Setup.
 
     Prerequisites:
-      * build/publish.ps1 has been run (needs artifacts/publish/AniVault.exe)
+      * build/publish.ps1 has been run (needs artifacts/publish/AniVault.exe + README.txt)
       * Inno Setup 6 is installed. If ISCC.exe is not found this script tries:
             winget install --id JRSoftware.InnoSetup -e
 
@@ -18,10 +18,11 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $iss      = Join-Path $repoRoot 'build/installer/AniVault.iss'
 $project  = Join-Path $repoRoot 'src/AniVault/AniVault.csproj'
 $publishedExe = Join-Path $repoRoot 'artifacts/publish/AniVault.exe'
+$publishedReadme = Join-Path $repoRoot 'artifacts/publish/README.txt'
 $distDir  = Join-Path $repoRoot 'dist'
 
-if (-not (Test-Path $publishedExe)) {
-    throw "artifacts/publish/AniVault.exe not found. Run build/publish.ps1 first."
+if (-not (Test-Path $publishedExe) -or -not (Test-Path $publishedReadme)) {
+    throw "artifacts/publish/AniVault.exe or README.txt not found. Run build/publish.ps1 first."
 }
 
 $version = ([xml](Get-Content $project)).Project.PropertyGroup.Version |
@@ -56,6 +57,7 @@ New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 & $iscc `
     "/DAppVersion=$version" `
     "/DSourceExe=$publishedExe" `
+    "/DSourceReadme=$publishedReadme" `
     "/DOutputDir=$distDir" `
     $iss
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)." }

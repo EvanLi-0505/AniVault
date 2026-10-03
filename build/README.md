@@ -3,9 +3,9 @@
 | Script | Purpose |
 |---|---|
 | `make-icon.ps1` | Regenerates `src/AniVault/Resources/Icons/AniVault.ico` from code (no external tools). Only needs re-running if the icon design changes; the `.ico` is committed. |
-| `publish.ps1` | `dotnet publish` → self-contained, single-file, compressed **win-x64** build. Stages `dist/AniVault-<version>-win-x64-portable/AniVault/AniVault.exe` and zips it. Writes `dist/SHA256SUMS.txt`. |
+| `publish.ps1` | `dotnet publish` → self-contained, single-file, compressed **win-x64** build. Stages `dist/AniVault-<version>-win-x64-portable/AniVault/` (`AniVault.exe` + `README.txt`) and zips it. Writes `dist/SHA256SUMS.txt`. |
 | `make-installer.ps1` | Compiles `installer/AniVault.iss` with Inno Setup 6 → `dist/AniVault-<version>-Setup.exe`. Installs Inno Setup via `winget` if it is not present. Run `publish.ps1` first. |
-| `installer/AniVault.iss` | Inno Setup script. Per-user install (no admin prompt), Start-menu shortcut, optional desktop icon, clean uninstall. Never touches the user's chosen data folder. |
+| `installer/AniVault.iss` | Inno Setup script. Per-user install (no admin prompt), Start-menu shortcut, optional desktop icon. Installs exactly what the ZIP contains (`AniVault.exe` + `README.txt`) — deliberately **no uninstaller** and no "Installed apps" entry; removing the app is deleting the folder. Never touches the user's chosen data folder. |
 
 ## Requirements
 

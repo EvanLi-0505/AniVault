@@ -17,8 +17,8 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 
     <!-- Product / version metadata (shown in the EXE properties and About text) -->
-    <Version>1.9.0</Version>
-    <InformationalVersion>1.9.0</InformationalVersion>
+    <Version>1.9.1</Version>
+    <InformationalVersion>1.9.1</InformationalVersion>
     <Product>AniVault</Product>
     <Company>AniVault</Company>
     <Authors>AniVault</Authors>
@@ -55,6 +55,8 @@
     <EmbeddedResource Include="Resources/Strings/en.json" />
     <EmbeddedResource Include="Resources/Strings/zh.json" />
     <EmbeddedResource Include="Resources/rating-guide.md" />
+    <!-- Window / taskbar icon, loaded via a pack URI in App.TaskbarIdentity.cs. -->
+    <Resource Include="Resources/Icons/AniVault.ico" />
   </ItemGroup>
 
 </Project>

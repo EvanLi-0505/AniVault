@@ -63,23 +63,35 @@ $portableDir = Join-Path $outerDir 'AniVault'
 if (Test-Path $outerDir) { Remove-Item $outerDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
 
-Copy-Item $exe (Join-Path $portableDir 'AniVault.exe')
-
+# One README for both distributions (make-installer.ps1 picks it up from artifacts/publish).
+$readme = Join-Path $stagingRoot 'README.txt'
 @"
-AniVault $version - portable build
+AniVault $version
 ==================================
 
-1. Extract this folder anywhere (a normal folder, a USB drive, ...).
-2. Double-click AniVault.exe.
-3. On first run, choose where your library data (database, artwork, backups) should live.
-   Pick a folder you can write to, e.g. D:\AniVaultData.
+Getting started
+  * Portable ZIP: extract this folder anywhere (a normal folder, a USB drive, ...) and
+    double-click AniVault.exe.
+  * Installer: AniVault.exe is already in place - start it from the Start menu.
 
-No installation and no .NET runtime are required.
+On first run, choose where your library data (database, artwork, backups) should live.
+Pick a folder you can write to, e.g. D:\AniVaultData.
 
-To move to another PC: copy your data folder across, install/extract AniVault there,
-and on first run point it at the copied data folder - or use Settings > Backup & data
-> Restore from backup.
-"@ | Set-Content -Encoding UTF8 (Join-Path $portableDir 'README.txt')
+No .NET runtime is required.
+
+Moving to another PC
+  Copy your data folder across, put AniVault on the new PC, and on first run point it at
+  the copied data folder - or use Settings > Backup & data > Restore from backup.
+
+Removing AniVault
+  There is no uninstaller and nothing is installed outside this folder. Delete this folder
+  (plus the Start-menu / desktop shortcut if you used the installer) and the app is gone.
+  Your library data folder is separate and is never deleted for you - remove it yourself
+  only if you really want to erase your library.
+"@ | Set-Content -Encoding UTF8 $readme
+
+Copy-Item $exe (Join-Path $portableDir 'AniVault.exe')
+Copy-Item $readme (Join-Path $portableDir 'README.txt')
 
 $zipPath = Join-Path $distDir "$name.zip"
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }

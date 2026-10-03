@@ -52,6 +52,8 @@ public partial class App : Application
             _instanceGuard.ActivationRequested += () => Dispatcher.BeginInvoke(BringToFront);
         }
 
+        SetupTaskbarIdentity();
+
         try
         {
             _services = BuildServiceProvider();

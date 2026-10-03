@@ -9,7 +9,7 @@ The build scripts write release artifacts here. **The binaries are not committed
 |---|---|
 | `AniVault-<version>-win-x64-portable.zip` | **Portable build (primary).** Extract, run `AniVault/AniVault.exe`. No install, no .NET needed. On first launch it asks where to keep your library data. |
 | `AniVault-<version>-win-x64-portable/` | The same, already unzipped (local convenience). |
-| `AniVault-<version>-Setup.exe` | Optional per-user installer (Inno Setup). No admin prompt, Start-menu shortcut, clean uninstall. Never touches your data folder. |
+| `AniVault-<version>-Setup.exe` | Optional per-user installer (Inno Setup). No admin prompt, Start-menu shortcut. Installs the same two files as the ZIP (`AniVault.exe` + `README.txt`) and no uninstaller — to remove it, delete the folder and the shortcut. Never touches your data folder. |
 | `SHA256SUMS.txt` | Plain-text SHA-256 checksums of the `.zip` and `Setup.exe`, one per line. Lets anyone verify a download wasn't corrupted or tampered with (`Get-FileHash file.zip` and compare). Safe to ignore if you don't need it. |
 
 ## Build
