@@ -81,7 +81,7 @@ public class LibraryViewModelTests
         }
     }
 
-    private static async Task<LibraryViewModel> CreateWithAnimeAsync(TestLibrary lib, int animeCount)
+    private static async Task<LibraryViewModel> CreateWithAnimeAsync(TestLibrary lib, int animeCount, LibraryLayout? layout = null)
     {
         var mediaService = new MediaService(lib);
         for (var i = 0; i < animeCount; i++)
@@ -108,6 +108,7 @@ public class LibraryViewModelTests
             new FakeNavigationService(),
             loc,
             filters,
+            layout ?? new LibraryLayout(),
             NullLogger<LibraryViewModel>.Instance);
 
         vm.SetMediaType(MediaType.Anime);
@@ -125,6 +126,65 @@ public class LibraryViewModelTests
         Assert.True(vm.PagingVisible);
         Assert.Equal(1, vm.CurrentPage);
         Assert.Equal(35, vm.Items.Count);
+    }
+
+    [Theory]
+    [InlineData(7, 35)]
+    [InlineData(6, 30)]
+    [InlineData(5, 35)]
+    [InlineData(4, 32)]
+    [InlineData(3, 33)]
+    [InlineData(2, 34)]
+    [InlineData(1, 35)]
+    [InlineData(8, 32)]
+    [InlineData(40, 35)]  // more columns than a page may hold: nothing to fill
+    [InlineData(0, 35)]
+    public void PageSize_Is_The_Largest_Whole_Number_Of_Rows_Within_35(int columns, int expected)
+        => Assert.Equal(expected, LibraryLayout.PageSizeFor(columns));
+
+    [Fact]
+    public async Task Narrower_Window_Shrinks_The_Page_To_Whole_Rows_And_Stays_On_The_Same_Cards()
+    {
+        using var lib = new TestLibrary();
+        var vm = await CreateWithAnimeAsync(lib, 80); // 7 per row: 35 + 35 + 10
+
+        vm.NextPageCommand.Execute(null);
+        Assert.Equal(35, vm.Items.Count);
+        var firstOnScreen = vm.Items[0].Id; // item #36 of the result set
+
+        vm.SetColumns(6); // 30 per page now: 30 + 30 + 20
+
+        Assert.Equal(3, vm.TotalPages);
+        Assert.Equal(30, vm.Items.Count);
+        Assert.Equal(2, vm.CurrentPage); // items 31-60 hold #36
+        Assert.Contains(vm.Items, card => card.Id == firstOnScreen);
+    }
+
+    [Fact]
+    public async Task SetColumns_With_The_Same_Value_Does_Not_Rebuild_The_Page()
+    {
+        using var lib = new TestLibrary();
+        var vm = await CreateWithAnimeAsync(lib, 40);
+        var card = vm.Items[0];
+
+        vm.SetColumns(7);
+
+        Assert.Same(card, vm.Items[0]);
+    }
+
+    [Fact]
+    public async Task The_Next_Library_Page_Starts_With_The_Row_Width_The_Last_One_Measured()
+    {
+        using var lib = new TestLibrary();
+        var layout = new LibraryLayout();
+        var first = await CreateWithAnimeAsync(lib, 40, layout);
+        first.SetColumns(6);
+
+        // A fresh page (same shared layout, as in the app) loads 30 straight away - no reload.
+        var second = await CreateWithAnimeAsync(lib, 0, layout);
+
+        Assert.Equal(30, second.Items.Count);
+        Assert.Equal(2, second.TotalPages);
     }
 
     [Fact]

@@ -171,9 +171,44 @@ public partial class App : Application
         {
             await RunNavigationSmokeTestAsync(shell);
         }
+        else
+        {
+            // Not under the smoke test: it skips the single-instance guard, so another copy may
+            // legitimately be running there.
+            RemoveLeftoverExtractionFolders();
+        }
     }
 
     /// <summary>Shows the modal first-run window. Returns true when setup completed successfully.</summary>
+    /// <summary>
+    /// Deletes the native-library folders other builds unpacked into the temp folder (see
+    /// <see cref="ExtractionCacheCleaner"/>). Local files only, in the background, never fatal.
+    /// </summary>
+    private void RemoveLeftoverExtractionFolders()
+    {
+        var logger = _logger!;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                if (ExtractionCacheCleaner.FindCurrentExtractionDirectory() is { } current)
+                {
+                    var removed = ExtractionCacheCleaner.RemoveOtherBuilds(current, logger);
+                    if (removed > 0)
+                    {
+                        logger.LogInformation(
+                            "Removed {Count} leftover native-library folder(s) of other AniVault builds from the temp folder.",
+                            removed);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Could not clean up leftover native-library folders.");
+            }
+        });
+    }
+
     private bool ShowFirstRun()
     {
         var viewModel = _services!.GetRequiredService<FirstRunViewModel>();

@@ -47,16 +47,16 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private readonly IArtworkService _artwork;
     private readonly INavigationService _navigation;
     private readonly ILocalizationService _loc;
+    private readonly LibraryLayout _layout;
     private readonly ILogger<LibraryViewModel> _logger;
-
-    // Lowered from 60: the library grid isn't virtualized, so WPF's render cost scales roughly
-    // with card count (measured ~150-270ms for 47 cards vs ~20-45ms for 5) — a smaller page bounds
-    // that cost without the risk of a hand-written virtualizing panel.
-    private const int PageSize = 35;
 
     private LibraryPreset _preset = new("Library", string.Empty);
     private CancellationTokenSource? _reloadCts;
     private List<Media> _pageSource = new();
+    private bool _hasLoaded;
+
+    // The page size CurrentPage was last counted in; see ApplyPage.
+    private int _pageSize;
 
     [ObservableProperty] private string _title = "Library";
     [ObservableProperty] private string _subtitle = string.Empty;
@@ -88,6 +88,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         INavigationService navigation,
         ILocalizationService loc,
         FilterPanelViewModel filters,
+        LibraryLayout layout,
         ILogger<LibraryViewModel> logger)
     {
         _queryService = queryService;
@@ -102,6 +103,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _navigation = navigation;
         _loc = loc;
         Filters = filters;
+        _layout = layout;
+        _pageSize = layout.PageSize;
         _logger = logger;
 
         Filters.Changed += (_, _) => ScheduleReload();
@@ -228,6 +231,24 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     private bool CanNextPage() => CurrentPage < TotalPages;
 
+    /// <summary>
+    /// Called by the view whenever the number of cards that fit on one row changes (window
+    /// resized, maximized, restored). The page size follows, so a page always ends on a full row.
+    /// </summary>
+    public void SetColumns(int columns)
+    {
+        if (columns < 1 || columns == _layout.Columns)
+        {
+            return;
+        }
+
+        _layout.Columns = columns;
+        if (_hasLoaded)
+        {
+            ApplyPage();
+        }
+    }
+
     /// <summary>Jumps straight to the page typed into <see cref="PageJumpText"/>; ignores garbage/out-of-range input.</summary>
     [RelayCommand]
     private void GoToPage()
@@ -343,6 +364,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
             }
 
             _pageSource = results.ToList();
+            _hasLoaded = true;
             if (resetPage)
             {
                 CurrentPage = 1;
@@ -367,13 +389,22 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
     private void ApplyPage()
     {
-        TotalPages = Math.Max(1, (int)Math.Ceiling(_pageSource.Count / (double)PageSize));
+        var pageSize = _layout.PageSize;
+        if (pageSize != _pageSize)
+        {
+            // The row width changed since CurrentPage was last counted (possibly while this page
+            // sat on the back stack): stay on the page holding what was the first card on screen.
+            CurrentPage = ((CurrentPage - 1) * _pageSize / pageSize) + 1;
+            _pageSize = pageSize;
+        }
+
+        TotalPages = Math.Max(1, (int)Math.Ceiling(_pageSource.Count / (double)pageSize));
         CurrentPage = Math.Clamp(CurrentPage, 1, TotalPages);
         PagingVisible = TotalPages > 1;
         PageLabel = _loc.Format("Library.PageFormat", CurrentPage, TotalPages);
 
         Items.Clear();
-        foreach (var media in _pageSource.Skip((CurrentPage - 1) * PageSize).Take(PageSize))
+        foreach (var media in _pageSource.Skip((CurrentPage - 1) * pageSize).Take(pageSize))
         {
             Items.Add(_cards.Create(media));
         }

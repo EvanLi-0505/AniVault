@@ -35,7 +35,7 @@ docs/STATUS.md         what's implemented, verified, and outstanding
 
 ```bash
 dotnet build AniVault.slnx -c Release        # must stay 0 warnings / 0 errors
-dotnet test  AniVault.slnx                    # ~140 tests, run serially
+dotnet test  AniVault.slnx                    # ~155 tests, run serially
 dotnet run --project src/AniVault             # first run asks for a data folder
 
 # packaging (PowerShell)
@@ -77,5 +77,5 @@ tags, a rating questionnaire (`Resources/rating-guide.md` rubric → `RatingCalc
 multi-select batch import, an always-editable editor category override, an explicit opt-in
 "compress oversized artwork" tool, a collapsible filter panel, a per-title hideable episode list,
 poster-card loading skeletons, portable packaging + installer, light/dark themes, and full
-English / 中文 localization (runtime toggle in Settings → Appearance). Shipped as **1.9.2**. See
+English / 中文 localization (runtime toggle in Settings → Appearance). Current build: **2.0.0**. See
 `docs/STATUS.md` for the authoritative list and what remains.

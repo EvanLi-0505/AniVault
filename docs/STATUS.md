@@ -1,6 +1,6 @@
 # Implementation status
 
-**Shipped as 1.9.2.** Everything below this line has landed, been build/test-verified (0
+**Built as 2.0.0** (awaiting the user's manual test before release). Everything below this line has landed, been build/test-verified (0
 warnings, 0 errors), and smoke-tested on both the dev build and the packaged portable exe /
 installer. See `CLAUDE.md` for the short version and the hard constraints.
 
@@ -83,7 +83,8 @@ installer. See `CLAUDE.md` for the short version and the hard constraints.
 - The filter dropdowns (Status / Year / Season) now use `FilterChoice<T>` wrapper items instead
   of a bare `null` entry, so the "All" / "(none)" option can be re-selected (a WPF `Selector`
   cannot re-select a null item once a real value was chosen — you were stuck until "Reset").
-- Every library / status / Favorites / Liked / Search / tag page paginates at **35 cards**
+- Every library / status / Favorites / Liked / Search / tag page paginates at **up to 35 cards**
+  (a whole number of rows for the current window width — see "2.0.0" below)
   (lowered from 60 — see the render-cost investigation below); the tag filter paginates at **30**.
   `LibraryViewModel` keeps the full result list and only builds card VMs for the visible page.
 - **Jump to page** — *requested*: with many items, clicking ‹/› repeatedly to reach a distant page
@@ -463,9 +464,38 @@ explicit button, never automatic — same rule `Metadata/` already follows).
 - Verified from `PrintWindow` screenshots of the Debug build during the smoke tour, on a copy of
   a real 482-title library at 2400x1400: Settings, Movies (5 cards), Liked (14 cards), Seasons.
 
+### 2.0.0 — whole-row pages, no leftovers in the temp folder — *requested*
+- **Pages always end on a full row.** The page size was a fixed 35, which is only a whole number
+  of rows at 7 (or 5) cards per row; at any other window width the page ended in a short row
+  with a gap. The page size is now the largest whole number of rows within 35 for the current
+  row width — 7 per row → 35, 6 → 30, 5 → 35, 4 → 32, 3 → 33 (`LibraryLayout.PageSizeFor`); 35
+  stays the upper bound, so the per-page render cost is unchanged.
+  - `LibraryView` code-behind measures the card area, fixes the grid at a whole number of
+    186px columns (`CardGrid.MaxWidth`) and reports the count via `LibraryViewModel.SetColumns`.
+    The vertical scrollbar's width is always reserved, so the scrollbar appearing or
+    disappearing can never change the column count (which would change the page, which could
+    toggle the scrollbar again).
+  - Resizing keeps the user's place: the page number is recomputed so the card that was first
+    on screen is still on the page shown.
+  - `LibraryLayout` is one shared instance, so a newly opened library page starts with the row
+    width the last one measured and loads the right page size straight away — navigation still
+    renders a page once, not twice (the 1.6.0 fix is preserved).
+  - Verified on a copy of a real 472-anime library through UI Automation + window captures:
+    6 per row → "page 1 / 16" and a full last row of 30; 4 per row → "1 / 15" and a full last
+    row of 32; 7 per row → "1 / 14".
+- **No leftovers in `%TEMP%`.** The single-file exe makes the .NET host unpack its native
+  libraries into `%TEMP%\.net\AniVault\<build id>\` once per build and never remove them, so
+  every update left the previous build's copy behind (the only thing AniVault left on the system
+  drive outside its own folders; it writes nothing to the registry). On a normal start the app
+  now deletes the folders of other builds in the background (`ExtractionCacheCleaner`, called
+  from `App.StartAsync`): only when it is itself running from such a folder, never the folder it
+  is using, and a folder another running copy has libraries loaded from is left whole (rename
+  first — which fails as a unit while any file inside is open — then delete). Skipped under
+  `ANIVAULT_SMOKE`, which bypasses the single-instance guard.
+
 ## Verified
 - `dotnet build AniVault.slnx -c Release` — 0 warnings, 0 errors.
-- `dotnet test AniVault.slnx` — 142 passing (schema/migrations, cascade delete, unique
+- `dotnet test AniVault.slnx` — 157 passing (schema/migrations, cascade delete, unique
   constraints, media CRUD, editor category override + save + Anime-field clearing on switch +
   artwork relocation on category switch, `ShowOnHome` default/persist/recently-added-exclusion, episode
   sync/watched/rating clamp/completed-stamp, backup round-trip + progress reporting +

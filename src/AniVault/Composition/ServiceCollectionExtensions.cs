@@ -121,6 +121,7 @@ internal static class ServiceCollectionExtensions
     public static IServiceCollection AddViewModels(this IServiceCollection services)
     {
         services.AddSingleton<ShellViewModel>();
+        services.AddSingleton<LibraryLayout>();
         services.AddTransient<FirstRunViewModel>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<LibraryViewModel>();

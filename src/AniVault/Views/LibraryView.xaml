@@ -64,7 +64,7 @@
         <controls:FilterPanel Grid.Row="2" Margin="0,16,0,16" DataContext="{Binding Filters}" />
 
         <!-- Content -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="3" SizeChanged="OnCardAreaSizeChanged">
             <controls:EmptyState Title="{loc:Loc Library.EmptyTitle}"
                                  Message="{Binding EmptyStateText}"
                                  ActionText="{Binding AddButtonText}"
@@ -73,7 +73,9 @@
 
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
-                <ItemsControl ItemsSource="{Binding Items}">
+                <!-- MaxWidth is set in code-behind to a whole number of card columns; the view model
+                     is told the same number, so its page size is always a whole number of rows. -->
+                <ItemsControl x:Name="CardGrid" ItemsSource="{Binding Items}" HorizontalAlignment="Center">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <!-- Centred: the panel is only as wide as its widest row, so the space the
